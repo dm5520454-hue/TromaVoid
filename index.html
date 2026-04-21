@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
     <title>TROMAVOID // ELITE_SYSTEM_V4_STABLE</title>
     
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlRST01BVk9JRCIsCiAgInNob3J0X25hbWUiIjogIlRST01BVk9JRCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMDAwMDAwIiwKICAidGhlbWVfY29sb3IiIjogIiNBMkU0RjMiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZnJlZXBpay5jb20vNTEyLzk0Lzk0MTEyLnBuZyIsCiAgICAgICJzaXplcyI6ICI1MTJ4NTEyIiwKICAgICAgInR5cGUiOiAiaW1hZ2UvcG5nIgogICAgfQogIF0KfQ==">
+
     <style>
         :root {
             --ice: #A2E4F3;
@@ -174,6 +177,16 @@
 <div id="reset-btn" onclick="resetTasksOnly()">[ REFRESH_TASKS ]</div>
 
 <script>
+    // Service Worker Registration for PWA Installation
+    if ('serviceWorker' in navigator) {
+        const sw = `
+            self.addEventListener('install', e => self.skipWaiting());
+            self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));
+        `;
+        const blob = new Blob([sw], {type: 'text/javascript'});
+        navigator.serviceWorker.register(URL.createObjectURL(blob));
+    }
+
     const canvas = document.getElementById('network');
     const ctx = canvas.getContext('2d');
     const terminal = document.getElementById('terminal');
@@ -249,7 +262,6 @@
 
     function resetTasksOnly() {
         if(confirm("REFRESH ALL TASKS? (PROGRESS REMAINS)")) { 
-            // تصفير المهام داخلياً بدون ريلود للصفحة
             state.isBreaching = false;
             state.activeIdx = null;
             state.taskName = "";
