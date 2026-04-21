@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TROMAVOID // PERSISTENT SYSTEM</title>
+    
+    <link rel="manifest" id="manifest-link">
+    <meta name="theme-color" content="#A2E4F3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2693/2693507.png">
+
+    <style>
+        :root {
+            --ice: #A2E4F3;
+            --ice-glow: rgba(162, 228, 243, 0.8);
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            background: #000;
+            color: var(--ice);
+            font-family: 'Courier New', monospace;
+            height: 100vh; width: 100vw;
+            overflow: hidden;
+        }
+
+        #pulse-bg {
+            position: fixed; inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            animation: iceVignette 4s infinite ease-in-out;
+        }
+
+        @keyframes iceVignette {
+            0%, 100% { box-shadow: inset 0 0 50px #000; }
+            50% { box-shadow: inset 0 0 150px rgba(162, 228, 243, 0.15); }
+        }
+
+        #terminal {
+            position: fixed; top: 20px; left: 20px;
+            z-index: 10; pointer-events: none;
+            font-size: 14px; font-weight: bold;
+            text-shadow: 0 0 10px var(--ice);
+            line-height: 1.6;
+        }
+
+        canvas { display: block; position: relative; z-index: 1; }
+
+        #overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.98);
+            display: none; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 100;
+        }
+
+        input {
+            background: transparent; border: 2px solid var(--ice);
+            color: var(--ice); font-size: 20px;
+            text-align: center; padding: 15px; margin: 10px;
+            outline: none; box-shadow: 0 0 20px var(--ice-glow);
+            width: 300px; border-radius: 4px;
+        }
+
+        .btn {
+            background: var(--ice); color: #000;
+            padding: 12px 40px; cursor: pointer;
+            font-weight: bold; margin-top: 15px;
+            box-shadow: 0 0 25px var(--ice);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        #reset-btn {
+            position: fixed; bottom: 30px; right: 30px;
+            z-index: 10; font-size: 12px; font-weight: bold;
+            cursor: pointer; color: var(--ice);
+            border: 2px solid var(--ice);
+            padding: 10px 20px;
+            box-shadow: 0 0 15px var(--ice-glow);
+            background: rgba(0,0,0,0.7);
+            transition: 0.3s;
+        }
+        #reset-btn:hover { background: var(--ice); color: #000; }
+    </style>
+</head>
+<body>
+
+<div id="pulse-bg"></div>
+<div id="terminal">> SYSTEM_ID: TROMAVOID_CORE<br>> STATUS: PERSISTENCE_ENABLED<br>> FLOW_SYNC: STANDBY</div>
+
+<div id="overlay">
+    <input type="text" id="targetName" placeholder="ENTER_TARGET_ID">
+    <input type="number" id="targetTime" placeholder="STAY_TIME (MIN)">
+    <div class="btn" onclick="engage()">ENGAGE FLOW</div>
+</div>
+
+<canvas id="network"></canvas>
+<div id="reset-btn" onclick="resetSystem()">[ NEW DAY / RESET PROGRESS ]</div>
+
+<script>
+    // --- PWA INLINE GENERATOR (The "Secret" Part) ---
+    const manifest = {
+        "name": "TROMAVOID",
+        "short_name": "TROMAVOID",
+        "start_url": ".",
+        "display": "standalone",
+        "background_color": "#000000",
+        "theme_color": "#A2E4F3",
+        "icons": [{"src": "https://cdn-icons-png.flaticon.com/512/2693/2693507.png", "sizes": "512x512", "type": "image/png"}]
+    };
+    const stringManifest = JSON.stringify(manifest);
+    const blobManifest = new Blob([stringManifest], {type: 'application/json'});
+    document.getElementById('manifest-link').setAttribute('href', URL.createObjectURL(blobManifest));
+
+    if ('serviceWorker' in navigator) {
+        const swCode = `self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request)); });`;
+        const blobSW = new Blob([swCode], {type: 'text/javascript'});
+        navigator.serviceWorker.register(URL.createObjectURL(blobSW));
+    }
+    // ------------------------------------------------
+
+    const canvas = document.getElementById('network');
+    const ctx = canvas.getContext('2d');
+    const terminal = document.getElementById('terminal');
+    
+    let nodes = [];
+    let state = { activeIdx: null, startTime: null, duration: 0, isBreaching: false, taskName: "" };
+
+    function saveToStorage() {
+        const data = {
+            nodes: nodes.map(n => ({ status: n.status, label: n.label, edgeProgress: n.edgeProgress })),
+            timer: state.isBreaching ? { activeIdx: state.activeIdx, startTime: state.startTime, duration: state.duration, taskName: state.taskName } : null
+        };
+        localStorage.setItem('the_node_data', JSON.stringify(data));
+    }
+
+    function resetSystem() {
+        if(confirm("هل تريد تصفير مهام اليوم فقط؟")) { 
+            localStorage.removeItem('the_node_data'); 
+            window.location.reload(); 
+        }
+    }
+
+    function init() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        ctx.scale(dpr, dpr);
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        nodes = [
+            { x: w * 0.08, y: h * 0.50, status: 'available', label: 'NODE_01', next: 1, edgeProgress: 0 },
+            { x: w * 0.17, y: h * 0.32, status: 'locked', label: 'NODE_02', next: 2, edgeProgress: 0 },
+            { x: w * 0.26, y: h * 0.68, status: 'locked', label: 'NODE_03', next: 3, edgeProgress: 0 },
+            { x: w * 0.35, y: h * 0.42, status: 'locked', label: 'NODE_04', next: 4, edgeProgress: 0 },
+            { x: w * 0.44, y: h * 0.58, status: 'locked', label: 'NODE_05', next: 5, edgeProgress: 0 },
+            { x: w * 0.53, y: h * 0.32, status: 'locked', label: 'NODE_06', next: 6, edgeProgress: 0 },
+            { x: w * 0.62, y: h * 0.68, status: 'locked', label: 'NODE_07', next: 7, edgeProgress: 0 },
+            { x: w * 0.71, y: h * 0.42, status: 'locked', label: 'NODE_08', next: 8, edgeProgress: 0 },
+            { x: w * 0.80, y: h * 0.58, status: 'locked', label: 'NODE_09', next: 9, edgeProgress: 0 },
+            { x: w * 0.89, y: h * 0.37, status: 'locked', label: 'NODE_10', next: 10, edgeProgress: 0 },
+            { x: w * 0.95, y: h * 0.50, status: 'locked', label: 'FINISH', next: null, edgeProgress: 0 }
+        ];
+
+        const saved = localStorage.getItem('the_node_data');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                const savedNodes = parsed.nodes || [];
+                nodes.forEach((n, i) => {
+                    if (savedNodes[i]) {
+                        n.status = savedNodes[i].status;
+                        n.label = savedNodes[i].label;
+                        n.edgeProgress = savedNodes[i].edgeProgress;
+                    }
+                });
+
+                if (parsed.timer) {
+                    const elapsed = (Date.now() - parsed.timer.startTime) / 1000;
+                    if (elapsed < parsed.timer.duration) {
+                        state = { isBreaching: true, ...parsed.timer };
+                    } else {
+                        state.activeIdx = parsed.timer.activeIdx;
+                        completeNode();
+                    }
+                }
+            } catch(e) { console.error("Data Corrupted", e); }
+        }
+    }
+
+    function update() {
+        if (state.isBreaching && state.activeIdx !== null) {
+            const elapsed = (Date.now() - state.startTime) / 1000;
+            const progress = Math.min(elapsed / state.duration, 1);
+            nodes[state.activeIdx].edgeProgress = progress;
+            
+            const rem = Math.max(state.duration - elapsed, 0);
+            terminal.innerHTML = `> INJECTING: ${state.taskName}<br>> TIME: ${Math.floor(rem/60)}:${Math.floor(rem%60).toString().padStart(2,'0')}<br>> PROGRESS: ${(progress * 100).toFixed(2)}%`;
+            
+            if (Math.floor(elapsed) % 5 === 0) { saveToStorage(); }
+
+            if (progress >= 1) completeNode();
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+        const time = Date.now();
+
+        nodes.forEach((n, i) => {
+            if (n.next !== null) {
+                const nextNode = nodes[n.next];
+                ctx.beginPath();
+                ctx.moveTo(n.x, n.y);
+                ctx.lineTo(nextNode.x, nextNode.y);
+                ctx.strokeStyle = '#2a2a2a';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                if (n.edgeProgress > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(n.x, n.y);
+                    ctx.lineTo(n.x + (nextNode.x - n.x) * n.edgeProgress, n.y + (nextNode.y - n.y) * n.edgeProgress);
+                    ctx.strokeStyle = '#A2E4F3';
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+                }
+            }
+
+            ctx.beginPath();
+            let r = (n.label === 'FINISH') ? 32 : 24;
+            if (i === state.activeIdx && state.isBreaching) r += Math.sin(time / 300) * 5;
+            if (n.status === 'available' && !state.isBreaching) r += Math.sin(time/600)*4;
+            ctx.arc(n.x, n.y, r, 0, Math.PI*2);
+
+            if (n.status === 'completed' || n.label === 'FINISH') {
+                ctx.fillStyle = '#A2E4F3';
+                ctx.shadowBlur = 30; ctx.shadowColor = '#A2E4F3';
+            } else if (i === state.activeIdx && state.isBreaching) {
+                ctx.fillStyle = '#000';
+                ctx.strokeStyle = '#A2E4F3';
+                ctx.lineWidth = 5;
+                ctx.stroke();
+                ctx.shadowBlur = 20; ctx.shadowColor = '#A2E4F3';
+            } else if (n.status === 'available') {
+                ctx.fillStyle = '#111';
+                ctx.strokeStyle = '#A2E4F3';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.shadowBlur = 10; ctx.shadowColor = '#A2E4F3';
+            } else {
+                ctx.fillStyle = '#1a1a1a';
+                ctx.strokeStyle = '#444';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = (n.status === 'locked' && n.label !== 'FINISH') ? '#666' : '#fff';
+            ctx.font = 'bold 12px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(n.label, n.x, n.y + 55);
+        });
+
+        update();
+        requestAnimationFrame(draw);
+    }
+
+    canvas.onclick = (e) => {
+        nodes.forEach((n, i) => {
+            const d = Math.sqrt((e.clientX - n.x)**2 + (e.clientY - n.y)**2);
+            if (d < 35 && n.status === 'available' && !state.isBreaching) {
+                state.activeIdx = i;
+                document.getElementById('overlay').style.display = 'flex';
+                document.getElementById('targetName').focus();
+            }
+        });
+    };
+
+    function engage() {
+        const name = document.getElementById('targetName').value;
+        const time = document.getElementById('targetTime').value;
+        if (!name || !time) return;
+        
+        state.taskName = name.toUpperCase();
+        state.duration = time * 60;
+        state.startTime = Date.now();
+        state.isBreaching = true;
+        
+        nodes[state.activeIdx].label = state.taskName;
+        document.getElementById('overlay').style.display = 'none';
+        saveToStorage();
+    }
+
+    function completeNode() {
+        if (state.activeIdx === null) return;
+        
+        nodes[state.activeIdx].status = 'completed';
+        nodes[state.activeIdx].edgeProgress = 1;
+        
+        const nextIdx = nodes[state.activeIdx].next;
+        if (nextIdx !== null && nodes[nextIdx]) {
+            nodes[nextIdx].status = 'available';
+        }
+        
+        state.isBreaching = false;
+        state.activeIdx = null;
+        terminal.innerHTML = `> MISSION_SUCCESS<br>> READY_FOR_NEXT_PHASE`;
+        saveToStorage();
+    }
+
+    window.onresize = () => { init(); };
+    init();
+    draw();
+</script>
+</body>
+</html>
