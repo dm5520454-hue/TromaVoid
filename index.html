@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#000000">
     <title>TROMAVOID // ELITE_SYSTEM_V4_STABLE</title>
     
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlRST01BVk9JRCIsCiAgInNob3J0X25hbWUiIjogIlRST01BVk9JRCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMDAwMDAwIiwKICAidGhlbWVfY29sb3IiIjogIiNBMkU0RjMiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZnJlZXBpay5jb20vNTEyLzk0Lzk0MTEyLnBuZyIsCiAgICAgICJzaXplcyI6ICI1MTJ4NTEyIiwKICAgICAgInR5cGUiOiAiaW1hZ2UvcG5nIgogICAgfQogIF0KfQ==">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlRST01BVk9JRCIsCiAgInNob3J0X25hbWUiIjogIlRST01BVk9JRCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMDAwMDAwIiwKICAidGhlbWVfY29sb3IiIjogIlN5c3RlbSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mcmVlcGlrLmNvbS81MTIvOTQvOTQxMTIucG5nIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9wbmciCiAgICB9CiAgXQp9">
 
     <style>
         :root {
@@ -177,14 +177,17 @@
 <div id="reset-btn" onclick="resetTasksOnly()">[ REFRESH_TASKS ]</div>
 
 <script>
-    // Service Worker Registration for PWA Installation
+    // Service Worker Registration with inline blob to enable PWA Install
     if ('serviceWorker' in navigator) {
-        const sw = `
-            self.addEventListener('install', e => self.skipWaiting());
-            self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));
-        `;
-        const blob = new Blob([sw], {type: 'text/javascript'});
-        navigator.serviceWorker.register(URL.createObjectURL(blob));
+        window.addEventListener('load', () => {
+            const swCode = `
+                self.addEventListener('install', e => self.skipWaiting());
+                self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));
+            `;
+            const blob = new Blob([swCode], { type: 'text/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl).catch(err => console.log('SW Script: ', err));
+        });
     }
 
     const canvas = document.getElementById('network');
@@ -279,20 +282,24 @@
         ctx.scale(dpr, dpr);
         canvas.style.width = window.innerWidth + 'px'; canvas.style.height = window.innerHeight + 'px';
         
-        createNodes();
-        const saved = localStorage.getItem('the_node_v4_stable');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            if (parsed.progression) Object.assign(state, parsed.progression);
-            if (parsed.nodes) parsed.nodes.forEach((n, i) => { if(nodes[i]) Object.assign(nodes[i], n); });
-            if (parsed.timer) {
-                const elapsed = (Date.now() - parsed.timer.startTime) / 1000;
-                if (elapsed < parsed.timer.duration) { 
-                    Object.assign(state, parsed.timer); 
-                    state.isBreaching = true; 
+        // تعديل بسيط: لا تنشئ نودز جديدة إذا كانت موجودة بالفعل (لحماية البيانات عند الـ Resize)
+        if (nodes.length === 0) {
+            createNodes();
+            const saved = localStorage.getItem('the_node_v4_stable');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed.progression) Object.assign(state, parsed.progression);
+                if (parsed.nodes) parsed.nodes.forEach((n, i) => { if(nodes[i]) Object.assign(nodes[i], n); });
+                if (parsed.timer) {
+                    const elapsed = (Date.now() - parsed.timer.startTime) / 1000;
+                    if (elapsed < parsed.timer.duration) { 
+                        Object.assign(state, parsed.timer); 
+                        state.isBreaching = true; 
+                    }
                 }
             }
         }
+        
         if (!state.playerName) document.getElementById('login-overlay').style.display = 'flex';
         updateStatsUI();
         draw();
@@ -369,6 +376,25 @@
         state.isBreaching = false; state.activeIdx = null;
         updateStatsUI(); saveToStorage();
     }
+
+    window.addEventListener('resize', () => {
+        // تحديث أبعاد الكانفاس فقط عند تغيير الحجم دون مسح المصفوفة
+        const dpr = window.devicePixelRatio || 1;
+        const oldW = canvas.width / dpr;
+        const oldH = canvas.height / dpr;
+        
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        ctx.scale(dpr, dpr);
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+
+        // إعادة توزيع النودز بنسب متساوية للأبعاد الجديدة
+        nodes.forEach(n => {
+            n.x = (n.x / oldW) * window.innerWidth;
+            n.y = (n.y / oldH) * window.innerHeight;
+        });
+    });
 
     init();
 </script>
