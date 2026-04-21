@@ -1,16 +1,10 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TROMAVOID // PERSISTENT SYSTEM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TROMAVOID // ELITE_SYSTEM_V4_STABLE</title>
     
-    <link rel="manifest" id="manifest-link">
-    <meta name="theme-color" content="#A2E4F3">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2693/2693507.png">
-
     <style>
         :root {
             --ice: #A2E4F3;
@@ -24,264 +18,322 @@
             font-family: 'Courier New', monospace;
             height: 100vh; width: 100vw;
             overflow: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
         #pulse-bg {
             position: fixed; inset: 0;
-            pointer-events: none;
-            z-index: 2;
+            pointer-events: none; z-index: 2;
             animation: iceVignette 4s infinite ease-in-out;
         }
 
         @keyframes iceVignette {
-            0%, 100% { box-shadow: inset 0 0 50px #000; }
-            50% { box-shadow: inset 0 0 150px rgba(162, 228, 243, 0.15); }
+            0%, 100% { box-shadow: inset 0 0 70px #000; }
+            50% { box-shadow: inset 0 0 180px rgba(162, 228, 243, 0.2); }
+        }
+
+        #global-xp-container {
+            position: fixed; top: 35px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 20; text-align: center;
+            pointer-events: none;
+        }
+        #total-xp-val {
+            font-size: 52px; font-weight: 900;
+            letter-spacing: 10px; color: #fff;
+            text-shadow: 0 0 25px var(--ice), 0 0 50px var(--ice);
+            display: block;
+        }
+        #total-xp-label {
+            font-size: 11px; letter-spacing: 5px;
+            color: var(--ice); opacity: 0.9;
+            margin-top: -5px;
         }
 
         #terminal {
-            position: fixed; top: 20px; left: 20px;
+            position: fixed; top: 25px; left: 25px;
             z-index: 10; pointer-events: none;
             font-size: 14px; font-weight: bold;
-            text-shadow: 0 0 10px var(--ice);
-            line-height: 1.6;
+            text-shadow: 0 0 12px var(--ice);
+            line-height: 1.8;
+            letter-spacing: 1px;
         }
 
-        canvas { display: block; position: relative; z-index: 1; }
+        #stats-panel {
+            position: fixed; top: 115px; right: 25px;
+            z-index: 10; text-align: right;
+            pointer-events: none;
+        }
+        #rank-display { font-size: 15px; font-weight: 900; letter-spacing: 2px; }
+        #xp-text { font-size: 11px; margin-top: 4px; font-weight: bold; }
+        #xp-bar-container {
+            width: 160px; height: 8px;
+            border: 1px solid var(--ice);
+            margin-top: 8px; background: rgba(0,0,0,0.6);
+        }
+        #xp-bar-fill {
+            height: 100%; background: var(--ice);
+            width: 0%; box-shadow: 0 0 12px var(--ice);
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-        #overlay {
+        #level-roadmap {
+            position: fixed; bottom: 85px; left: 0;
+            width: 100vw; height: 110px;
+            display: flex; align-items: center;
+            gap: 25px; z-index: 10;
+            padding: 0 60px;
+            background: rgba(0,0,0,0.9);
+            border-top: 1px solid rgba(162, 228, 243, 0.15);
+            overflow-x: scroll;
+            scrollbar-width: none;
+        }
+
+        .lvl-step {
+            min-width: 110px; height: 85px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            border: 1px solid rgba(162, 228, 243, 0.1);
+            background: rgba(10,10,10,0.8);
+            transition: all 0.4s ease; flex-shrink: 0;
+            border-radius: 4px;
+        }
+        .lvl-step.unlocked { border-color: var(--ice); opacity: 1; }
+        .lvl-step.locked { opacity: 0.35; filter: grayscale(0.8); }
+        
+        #overlay, #login-overlay {
             position: fixed; inset: 0;
             background: rgba(0,0,0,0.98);
             display: none; flex-direction: column;
             justify-content: center; align-items: center;
             z-index: 100;
+            backdrop-filter: blur(10px);
         }
 
         input {
-            background: transparent; border: 2px solid var(--ice);
+            background: rgba(0,0,0,0.5); border: 2px solid var(--ice);
             color: var(--ice); font-size: 20px;
-            text-align: center; padding: 15px; margin: 10px;
-            outline: none; box-shadow: 0 0 20px var(--ice-glow);
-            width: 300px; border-radius: 4px;
+            text-align: center; padding: 18px; margin: 12px;
+            outline: none; width: 300px;
+            text-transform: uppercase;
+            font-family: 'Courier New', monospace;
         }
 
         .btn {
             background: var(--ice); color: #000;
-            padding: 12px 40px; cursor: pointer;
-            font-weight: bold; margin-top: 15px;
-            box-shadow: 0 0 25px var(--ice);
-            letter-spacing: 2px;
-            text-transform: uppercase;
+            padding: 14px 60px; cursor: pointer;
+            font-weight: 900; margin-top: 25px;
+            letter-spacing: 3px;
+            box-shadow: 0 0 30px var(--ice);
         }
 
         #reset-btn {
-            position: fixed; bottom: 30px; right: 30px;
-            z-index: 10; font-size: 12px; font-weight: bold;
+            position: fixed; bottom: 25px; right: 25px;
+            z-index: 10; font-size: 11px; font-weight: bold;
             cursor: pointer; color: var(--ice);
-            border: 2px solid var(--ice);
-            padding: 10px 20px;
-            box-shadow: 0 0 15px var(--ice-glow);
-            background: rgba(0,0,0,0.7);
-            transition: 0.3s;
+            border: 1px solid var(--ice);
+            padding: 10px 20px; background: rgba(0,0,0,0.8);
+            text-shadow: 0 0 5px var(--ice);
         }
-        #reset-btn:hover { background: var(--ice); color: #000; }
+        canvas { display: block; position: relative; z-index: 1; }
     </style>
 </head>
 <body>
 
 <div id="pulse-bg"></div>
-<div id="terminal">> SYSTEM_ID: TROMAVOID_CORE<br>> STATUS: PERSISTENCE_ENABLED<br>> FLOW_SYNC: STANDBY</div>
+
+<div id="login-overlay">
+    <div style="font-size: 14px; letter-spacing: 6px; margin-bottom: 25px;">ESTABLISH_IDENTITY</div>
+    <input type="text" id="playerNameInput" placeholder="PLAYER_NAME" autocomplete="off">
+    <div class="btn" onclick="savePlayerName()">CONFIRM</div>
+</div>
+
+<div id="global-xp-container">
+    <span id="total-xp-val">00000</span>
+    <span id="total-xp-label">TOTAL_SYSTEM_XP</span>
+</div>
+
+<div id="terminal">> ID: UNKNOWN<br>> STATUS: READY</div>
+
+<div id="stats-panel">
+    <div id="rank-display">LVL 1 // SHADOW</div>
+    <div id="xp-text">0 / 100 XP</div>
+    <div id="xp-bar-container"><div id="xp-bar-fill"></div></div>
+</div>
+
+<div id="level-roadmap"></div>
 
 <div id="overlay">
-    <input type="text" id="targetName" placeholder="ENTER_TARGET_ID">
-    <input type="number" id="targetTime" placeholder="STAY_TIME (MIN)">
-    <div class="btn" onclick="engage()">ENGAGE FLOW</div>
+    <div style="font-size: 12px; letter-spacing: 4px; margin-bottom: 20px;">SET_TARGET_COORDINATES</div>
+    <input type="text" id="targetName" placeholder="SECTOR_NAME" autocomplete="off">
+    <input type="number" id="targetTime" placeholder="MINUTES" autocomplete="off">
+    <div class="btn" onclick="engage()">INITIATE</div>
 </div>
 
 <canvas id="network"></canvas>
-<div id="reset-btn" onclick="resetSystem()">[ NEW DAY / RESET PROGRESS ]</div>
+<div id="reset-btn" onclick="resetTasksOnly()">[ REFRESH_TASKS ]</div>
 
 <script>
-    // --- PWA INLINE GENERATOR (The "Secret" Part) ---
-    const manifest = {
-        "name": "TROMAVOID",
-        "short_name": "TROMAVOID",
-        "start_url": ".",
-        "display": "standalone",
-        "background_color": "#000000",
-        "theme_color": "#A2E4F3",
-        "icons": [{"src": "https://cdn-icons-png.flaticon.com/512/2693/2693507.png", "sizes": "512x512", "type": "image/png"}]
-    };
-    const stringManifest = JSON.stringify(manifest);
-    const blobManifest = new Blob([stringManifest], {type: 'application/json'});
-    document.getElementById('manifest-link').setAttribute('href', URL.createObjectURL(blobManifest));
-
-    if ('serviceWorker' in navigator) {
-        const swCode = `self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request)); });`;
-        const blobSW = new Blob([swCode], {type: 'text/javascript'});
-        navigator.serviceWorker.register(URL.createObjectURL(blobSW));
-    }
-    // ------------------------------------------------
-
     const canvas = document.getElementById('network');
     const ctx = canvas.getContext('2d');
     const terminal = document.getElementById('terminal');
     
     let nodes = [];
-    let state = { activeIdx: null, startTime: null, duration: 0, isBreaching: false, taskName: "" };
+    let state = { 
+        activeIdx: null, startTime: null, duration: 0, isBreaching: false, taskName: "",
+        exp: 0, level: 1, totalXP: 0, playerName: "" 
+    };
+
+    const ranks = ["SHADOW", "INITIATE", "OPERATIVE", "BREACHER", "ENFORCER", "VANGUARD", "PHANTOM", "ASSASSIN", "SPECTRE", "ELITE_AGENT", "WARLORD", "OVERLORD", "ARCHITECT", "SYSTEM_GHOST", "GOD_MODE"];
+
+    function getRequiredXP(lvl) { return Math.floor(100 * Math.pow(1.2, lvl - 1)); }
+
+    function savePlayerName() {
+        const name = document.getElementById('playerNameInput').value;
+        if (name) {
+            state.playerName = name.toUpperCase();
+            document.getElementById('login-overlay').style.display = 'none';
+            saveToStorage();
+            updateStatsUI();
+        }
+    }
+
+    function updateStatsUI() {
+        const req = getRequiredXP(state.level);
+        const rankIdx = Math.min(Math.floor((state.level - 1) / 7), ranks.length - 1);
+        document.getElementById('rank-display').innerText = `LVL ${state.level} // ${ranks[rankIdx]}`;
+        document.getElementById('xp-text').innerText = `${Math.floor(state.exp)} / ${req} XP`;
+        document.getElementById('xp-bar-fill').style.width = `${Math.min((state.exp / req) * 100, 100)}%`;
+        document.getElementById('total-xp-val').innerText = state.totalXP.toString().padStart(5, '0');
+        if (!state.isBreaching) terminal.innerHTML = `> ID: ${state.playerName || 'UNKNOWN'}<br>> STATUS: READY`;
+        renderRoadmap();
+    }
+
+    function renderRoadmap() {
+        const roadmap = document.getElementById('level-roadmap');
+        roadmap.innerHTML = '';
+        for(let i = 1; i <= 100; i++) {
+            const isUnlocked = i <= state.level;
+            const step = document.createElement('div');
+            step.className = `lvl-step ${isUnlocked ? 'unlocked' : 'locked'}`;
+            step.innerHTML = `<div style="font-size:24px">${isUnlocked ? '💠' : '🔒'}</div><div style="font-size:11px">LVL ${i}</div>`;
+            roadmap.appendChild(step);
+        }
+    }
 
     function saveToStorage() {
         const data = {
             nodes: nodes.map(n => ({ status: n.status, label: n.label, edgeProgress: n.edgeProgress })),
-            timer: state.isBreaching ? { activeIdx: state.activeIdx, startTime: state.startTime, duration: state.duration, taskName: state.taskName } : null
+            timer: state.isBreaching ? { activeIdx: state.activeIdx, startTime: state.startTime, duration: state.duration, taskName: state.taskName } : null,
+            progression: { exp: state.exp, level: state.level, totalXP: state.totalXP, playerName: state.playerName }
         };
-        localStorage.setItem('the_node_data', JSON.stringify(data));
+        localStorage.setItem('the_node_v4_stable', JSON.stringify(data));
     }
 
-    function resetSystem() {
-        if(confirm("هل تريد تصفير مهام اليوم فقط؟")) { 
-            localStorage.removeItem('the_node_data'); 
-            window.location.reload(); 
+    function createNodes() {
+        const w = window.innerWidth; const h = window.innerHeight;
+        nodes = [
+            { x: w * 0.08, y: h * 0.50, status: 'available', label: '01', next: 1, edgeProgress: 0 },
+            { x: w * 0.17, y: h * 0.32, status: 'locked', label: '02', next: 2, edgeProgress: 0 },
+            { x: w * 0.26, y: h * 0.68, status: 'locked', label: '03', next: 3, edgeProgress: 0 },
+            { x: w * 0.35, y: h * 0.42, status: 'locked', label: '04', next: 4, edgeProgress: 0 },
+            { x: w * 0.44, y: h * 0.58, status: 'locked', label: '05', next: 5, edgeProgress: 0 },
+            { x: w * 0.53, y: h * 0.32, status: 'locked', label: '06', next: 6, edgeProgress: 0 },
+            { x: w * 0.62, y: h * 0.68, status: 'locked', label: '07', next: 7, edgeProgress: 0 },
+            { x: w * 0.71, y: h * 0.42, status: 'locked', label: '08', next: 8, edgeProgress: 0 },
+            { x: w * 0.80, y: h * 0.58, status: 'locked', label: '09', next: 9, edgeProgress: 0 },
+            { x: w * 0.89, y: h * 0.37, status: 'locked', label: '10', next: 10, edgeProgress: 0 },
+            { x: w * 0.95, y: h * 0.50, status: 'locked', label: 'CORE', next: null, edgeProgress: 0 }
+        ];
+    }
+
+    function resetTasksOnly() {
+        if(confirm("REFRESH ALL TASKS? (PROGRESS REMAINS)")) { 
+            // تصفير المهام داخلياً بدون ريلود للصفحة
+            state.isBreaching = false;
+            state.activeIdx = null;
+            state.taskName = "";
+            state.startTime = null;
+            createNodes();
+            saveToStorage();
+            updateStatsUI();
+            terminal.innerHTML = `> ID: ${state.playerName}<br>> STATUS: SYSTEM_REBOOTED`;
         }
     }
 
     function init() {
         const dpr = window.devicePixelRatio || 1;
-        canvas.width = window.innerWidth * dpr;
-        canvas.height = window.innerHeight * dpr;
+        canvas.width = window.innerWidth * dpr; canvas.height = window.innerHeight * dpr;
         ctx.scale(dpr, dpr);
-        canvas.style.width = window.innerWidth + 'px';
-        canvas.style.height = window.innerHeight + 'px';
-
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-
-        nodes = [
-            { x: w * 0.08, y: h * 0.50, status: 'available', label: 'NODE_01', next: 1, edgeProgress: 0 },
-            { x: w * 0.17, y: h * 0.32, status: 'locked', label: 'NODE_02', next: 2, edgeProgress: 0 },
-            { x: w * 0.26, y: h * 0.68, status: 'locked', label: 'NODE_03', next: 3, edgeProgress: 0 },
-            { x: w * 0.35, y: h * 0.42, status: 'locked', label: 'NODE_04', next: 4, edgeProgress: 0 },
-            { x: w * 0.44, y: h * 0.58, status: 'locked', label: 'NODE_05', next: 5, edgeProgress: 0 },
-            { x: w * 0.53, y: h * 0.32, status: 'locked', label: 'NODE_06', next: 6, edgeProgress: 0 },
-            { x: w * 0.62, y: h * 0.68, status: 'locked', label: 'NODE_07', next: 7, edgeProgress: 0 },
-            { x: w * 0.71, y: h * 0.42, status: 'locked', label: 'NODE_08', next: 8, edgeProgress: 0 },
-            { x: w * 0.80, y: h * 0.58, status: 'locked', label: 'NODE_09', next: 9, edgeProgress: 0 },
-            { x: w * 0.89, y: h * 0.37, status: 'locked', label: 'NODE_10', next: 10, edgeProgress: 0 },
-            { x: w * 0.95, y: h * 0.50, status: 'locked', label: 'FINISH', next: null, edgeProgress: 0 }
-        ];
-
-        const saved = localStorage.getItem('the_node_data');
+        canvas.style.width = window.innerWidth + 'px'; canvas.style.height = window.innerHeight + 'px';
+        
+        createNodes();
+        const saved = localStorage.getItem('the_node_v4_stable');
         if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                const savedNodes = parsed.nodes || [];
-                nodes.forEach((n, i) => {
-                    if (savedNodes[i]) {
-                        n.status = savedNodes[i].status;
-                        n.label = savedNodes[i].label;
-                        n.edgeProgress = savedNodes[i].edgeProgress;
-                    }
-                });
-
-                if (parsed.timer) {
-                    const elapsed = (Date.now() - parsed.timer.startTime) / 1000;
-                    if (elapsed < parsed.timer.duration) {
-                        state = { isBreaching: true, ...parsed.timer };
-                    } else {
-                        state.activeIdx = parsed.timer.activeIdx;
-                        completeNode();
-                    }
+            const parsed = JSON.parse(saved);
+            if (parsed.progression) Object.assign(state, parsed.progression);
+            if (parsed.nodes) parsed.nodes.forEach((n, i) => { if(nodes[i]) Object.assign(nodes[i], n); });
+            if (parsed.timer) {
+                const elapsed = (Date.now() - parsed.timer.startTime) / 1000;
+                if (elapsed < parsed.timer.duration) { 
+                    Object.assign(state, parsed.timer); 
+                    state.isBreaching = true; 
                 }
-            } catch(e) { console.error("Data Corrupted", e); }
+            }
         }
+        if (!state.playerName) document.getElementById('login-overlay').style.display = 'flex';
+        updateStatsUI();
+        draw();
     }
 
-    function update() {
+    function draw() {
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+        const pulse = Math.sin(Date.now() / 300) * 4;
+
         if (state.isBreaching && state.activeIdx !== null) {
             const elapsed = (Date.now() - state.startTime) / 1000;
             const progress = Math.min(elapsed / state.duration, 1);
             nodes[state.activeIdx].edgeProgress = progress;
-            
             const rem = Math.max(state.duration - elapsed, 0);
-            terminal.innerHTML = `> INJECTING: ${state.taskName}<br>> TIME: ${Math.floor(rem/60)}:${Math.floor(rem%60).toString().padStart(2,'0')}<br>> PROGRESS: ${(progress * 100).toFixed(2)}%`;
-            
-            if (Math.floor(elapsed) % 5 === 0) { saveToStorage(); }
-
+            terminal.innerHTML = `> PLAYER: ${state.playerName}<br>> BREACHING: ${state.taskName}<br>> TIME: ${Math.floor(rem/60)}:${Math.floor(rem%60).toString().padStart(2,'0')}<br>> PROGRESS: ${(progress * 100).toFixed(2)}%`;
             if (progress >= 1) completeNode();
         }
-    }
-
-    function draw() {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-        const time = Date.now();
-
+        
         nodes.forEach((n, i) => {
             if (n.next !== null) {
-                const nextNode = nodes[n.next];
-                ctx.beginPath();
-                ctx.moveTo(n.x, n.y);
-                ctx.lineTo(nextNode.x, nextNode.y);
-                ctx.strokeStyle = '#2a2a2a';
-                ctx.lineWidth = 3;
-                ctx.stroke();
-
+                const nxt = nodes[n.next];
+                ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(nxt.x, nxt.y);
+                ctx.strokeStyle = '#111'; ctx.lineWidth = 4; ctx.stroke();
                 if (n.edgeProgress > 0) {
-                    ctx.beginPath();
-                    ctx.moveTo(n.x, n.y);
-                    ctx.lineTo(n.x + (nextNode.x - n.x) * n.edgeProgress, n.y + (nextNode.y - n.y) * n.edgeProgress);
-                    ctx.strokeStyle = '#A2E4F3';
-                    ctx.lineWidth = 4;
-                    ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(n.x + (nxt.x - n.x) * n.edgeProgress, n.y + (nxt.y - n.y) * n.edgeProgress);
+                    ctx.strokeStyle = '#A2E4F3'; ctx.lineWidth = 5; ctx.stroke();
                 }
             }
-
-            ctx.beginPath();
-            let r = (n.label === 'FINISH') ? 32 : 24;
-            if (i === state.activeIdx && state.isBreaching) r += Math.sin(time / 300) * 5;
-            if (n.status === 'available' && !state.isBreaching) r += Math.sin(time/600)*4;
-            ctx.arc(n.x, n.y, r, 0, Math.PI*2);
-
-            if (n.status === 'completed' || n.label === 'FINISH') {
-                ctx.fillStyle = '#A2E4F3';
-                ctx.shadowBlur = 30; ctx.shadowColor = '#A2E4F3';
-            } else if (i === state.activeIdx && state.isBreaching) {
-                ctx.fillStyle = '#000';
-                ctx.strokeStyle = '#A2E4F3';
-                ctx.lineWidth = 5;
-                ctx.stroke();
-                ctx.shadowBlur = 20; ctx.shadowColor = '#A2E4F3';
-            } else if (n.status === 'available') {
-                ctx.fillStyle = '#111';
-                ctx.strokeStyle = '#A2E4F3';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                ctx.shadowBlur = 10; ctx.shadowColor = '#A2E4F3';
-            } else {
-                ctx.fillStyle = '#1a1a1a';
-                ctx.strokeStyle = '#444';
-                ctx.lineWidth = 2;
-                ctx.stroke();
+            
+            ctx.beginPath(); 
+            let r = (n.label === 'CORE') ? 34 : 26;
+            if (i === state.activeIdx && state.isBreaching) {
+                r += pulse;
+                ctx.shadowBlur = 20 + pulse * 2; ctx.shadowColor = '#A2E4F3';
             }
-            ctx.fill();
-            ctx.shadowBlur = 0;
-
-            ctx.fillStyle = (n.status === 'locked' && n.label !== 'FINISH') ? '#666' : '#fff';
-            ctx.font = 'bold 12px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(n.label, n.x, n.y + 55);
+            ctx.arc(n.x, n.y, r, 0, Math.PI*2);
+            
+            if (n.status === 'completed' || n.label === 'CORE') { ctx.fillStyle = '#A2E4F3'; }
+            else if (i === state.activeIdx && state.isBreaching) { ctx.fillStyle = '#000'; ctx.strokeStyle = '#A2E4F3'; ctx.lineWidth = 6; ctx.stroke(); }
+            else if (n.status === 'available') { ctx.fillStyle = '#0a0a0a'; ctx.strokeStyle = '#A2E4F3'; ctx.lineWidth = 2; ctx.stroke(); }
+            else { ctx.fillStyle = '#111'; ctx.strokeStyle = '#222'; ctx.lineWidth = 2; ctx.stroke(); }
+            
+            ctx.fill(); ctx.shadowBlur = 0;
+            ctx.fillStyle = (n.status === 'locked' && n.label !== 'CORE') ? '#444' : '#fff';
+            ctx.font = '900 12px monospace'; ctx.textAlign = 'center'; ctx.fillText(n.label, n.x, n.y + 55);
         });
-
-        update();
         requestAnimationFrame(draw);
     }
 
     canvas.onclick = (e) => {
         nodes.forEach((n, i) => {
-            const d = Math.sqrt((e.clientX - n.x)**2 + (e.clientY - n.y)**2);
-            if (d < 35 && n.status === 'available' && !state.isBreaching) {
-                state.activeIdx = i;
-                document.getElementById('overlay').style.display = 'flex';
-                document.getElementById('targetName').focus();
+            if (Math.sqrt((e.clientX - n.x)**2 + (e.clientY - n.y)**2) < 40 && n.status === 'available' && !state.isBreaching) {
+                state.activeIdx = i; document.getElementById('overlay').style.display = 'flex';
             }
         });
     };
@@ -290,37 +342,23 @@
         const name = document.getElementById('targetName').value;
         const time = document.getElementById('targetTime').value;
         if (!name || !time) return;
-        
-        state.taskName = name.toUpperCase();
-        state.duration = time * 60;
-        state.startTime = Date.now();
-        state.isBreaching = true;
-        
-        nodes[state.activeIdx].label = state.taskName;
-        document.getElementById('overlay').style.display = 'none';
+        state.taskName = name.toUpperCase(); state.duration = time * 60; state.startTime = Date.now(); state.isBreaching = true;
+        nodes[state.activeIdx].label = state.taskName; document.getElementById('overlay').style.display = 'none';
         saveToStorage();
     }
 
     function completeNode() {
-        if (state.activeIdx === null) return;
-        
+        const reward = Math.floor(state.duration / 60);
+        state.totalXP += reward; state.exp += reward;
+        while (state.exp >= getRequiredXP(state.level)) { state.exp -= getRequiredXP(state.level); state.level++; }
         nodes[state.activeIdx].status = 'completed';
-        nodes[state.activeIdx].edgeProgress = 1;
-        
         const nextIdx = nodes[state.activeIdx].next;
-        if (nextIdx !== null && nodes[nextIdx]) {
-            nodes[nextIdx].status = 'available';
-        }
-        
-        state.isBreaching = false;
-        state.activeIdx = null;
-        terminal.innerHTML = `> MISSION_SUCCESS<br>> READY_FOR_NEXT_PHASE`;
-        saveToStorage();
+        if (nextIdx !== null) nodes[nextIdx].status = 'available';
+        state.isBreaching = false; state.activeIdx = null;
+        updateStatsUI(); saveToStorage();
     }
 
-    window.onresize = () => { init(); };
     init();
-    draw();
 </script>
 </body>
 </html>
