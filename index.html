@@ -177,7 +177,6 @@
 <div id="reset-btn" onclick="resetTasksOnly()">[ REFRESH_TASKS ]</div>
 
 <script>
-    // Service Worker Registration with inline blob to enable PWA Install
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
@@ -282,7 +281,6 @@
         ctx.scale(dpr, dpr);
         canvas.style.width = window.innerWidth + 'px'; canvas.style.height = window.innerHeight + 'px';
         
-        // تعديل بسيط: لا تنشئ نودز جديدة إذا كانت موجودة بالفعل (لحماية البيانات عند الـ Resize)
         if (nodes.length === 0) {
             createNodes();
             const saved = localStorage.getItem('the_node_v4_stable');
@@ -290,9 +288,14 @@
                 const parsed = JSON.parse(saved);
                 if (parsed.progression) Object.assign(state, parsed.progression);
                 if (parsed.nodes) parsed.nodes.forEach((n, i) => { if(nodes[i]) Object.assign(nodes[i], n); });
+                
                 if (parsed.timer) {
                     const elapsed = (Date.now() - parsed.timer.startTime) / 1000;
-                    if (elapsed < parsed.timer.duration) { 
+                    if (elapsed >= parsed.timer.duration) { 
+                        Object.assign(state, parsed.timer);
+                        state.isBreaching = true;
+                        completeNode(); 
+                    } else {
                         Object.assign(state, parsed.timer); 
                         state.isBreaching = true; 
                     }
@@ -377,19 +380,19 @@
         updateStatsUI(); saveToStorage();
     }
 
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') saveToStorage();
+    });
+
     window.addEventListener('resize', () => {
-        // تحديث أبعاد الكانفاس فقط عند تغيير الحجم دون مسح المصفوفة
         const dpr = window.devicePixelRatio || 1;
         const oldW = canvas.width / dpr;
         const oldH = canvas.height / dpr;
-        
         canvas.width = window.innerWidth * dpr;
         canvas.height = window.innerHeight * dpr;
         ctx.scale(dpr, dpr);
         canvas.style.width = window.innerWidth + 'px';
         canvas.style.height = window.innerHeight + 'px';
-
-        // إعادة توزيع النودز بنسب متساوية للأبعاد الجديدة
         nodes.forEach(n => {
             n.x = (n.x / oldW) * window.innerWidth;
             n.y = (n.y / oldH) * window.innerHeight;
