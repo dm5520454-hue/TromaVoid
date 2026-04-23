@@ -9,6 +9,7 @@
     <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlRST01BVk9JRCIsCiAgInNob3J0X25hbWUiOiAiVFJPTUFWT0lEIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwMDAwMDAiLAogICJ0aGVtZV9jb2xvciI6ICJTeXN0ZW0iLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZnJlZXBpay5jb20vNTEyLzk0Lzk0MTEyLnBuZyIsCiAgICAgICJzaXplcyI6ICI1MTJ4NTEyIiwKICAgICAgInR5cGUiOiAiaW1hZ2UvcG5nIgogICAgfQogIF0KfQ">
 
     <style>
+        /* ------------------- جميع الأنماط كما هي بالضبط ------------------- */
         :root {
             --ice: #A2E4F3;
             --ice-glow: rgba(162, 228, 243, 0.8);
@@ -36,7 +37,6 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* Enhanced Background Effects */
         #pulse-bg {
             position: fixed;
             inset: 0;
@@ -51,7 +51,6 @@
             50% { box-shadow: inset 0 0 200px rgba(162, 228, 243, 0.3), 0 0 100px rgba(162, 228, 243, 0.2); }
         }
 
-        /* Scanline Effect */
         #scanline {
             position: fixed;
             inset: 0;
@@ -66,18 +65,17 @@
             100% { transform: translateY(100vh); }
         }
 
-        /* ----- TOP BAR (Adjusted lower to avoid ceiling) ----- */
         #top-bar {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            height: 130px; /* زيادة بسيطة */
+            height: 130px;
             z-index: 20;
             display: flex;
-            align-items: flex-start; /* بدل center عشان النص يبعد عن السقف */
+            align-items: flex-start;
             justify-content: space-between;
-            padding: 30px 30px 20px; /* padding-top أكبر */
+            padding: 30px 30px 20px;
             background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 80%, transparent 100%);
             pointer-events: none;
             border-bottom: 1px solid rgba(162, 228, 243, 0.1);
@@ -233,7 +231,6 @@
             font-size: 10px;
         }
 
-        /* Premium Level Roadmap */
         #level-roadmap {
             position: fixed;
             bottom: 85px;
@@ -312,7 +309,6 @@
             letter-spacing: 1px;
         }
 
-        /* ----- VS FIGHT ANIMATION (WITH FIRE & DESTRUCTION EFFECTS) ----- */
         #vs-overlay {
             position: fixed;
             inset: 0;
@@ -332,7 +328,6 @@
             100% { background: #000; }
         }
 
-        /* Fire particles */
         .fire-particle {
             position: absolute;
             bottom: 0;
@@ -478,7 +473,6 @@
             100% { opacity: 1; transform: scale(1) rotate(0); }
         }
 
-        /* Keep all original overlays and elements intact */
         #achievement-popup {
             position: fixed;
             top: 140px;
@@ -511,7 +505,6 @@
             font-size: 12px;
         }
 
-        /* Enhanced Overlays */
         #overlay, #login-overlay, #shop-overlay, #skills-overlay {
             position: fixed;
             inset: 0;
@@ -587,7 +580,6 @@
             box-shadow: 0 0 40px var(--danger);
         }
 
-        /* Control Buttons */
         .control-btn {
             position: fixed;
             z-index: 15;
@@ -627,7 +619,6 @@
             right: 350px;
         }
 
-        /* Shop Items */
         .shop-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -672,7 +663,6 @@
             color: var(--gold);
         }
 
-        /* Skills Tree */
         .skills-container {
             display: flex;
             gap: 30px;
@@ -716,7 +706,6 @@
             z-index: 1;
         }
 
-        /* Particle Effects */
         .particle {
             position: fixed;
             pointer-events: none;
@@ -733,7 +722,7 @@
             50% { opacity: 0.8; }
         }
 
-        /* ========== INSTALL BANNER (NEW) ========== */
+        /* ========== INSTALL BANNER ========== */
         #install-banner {
             position: fixed;
             bottom: 0;
@@ -806,7 +795,6 @@
             background: rgba(162,228,243,0.1);
         }
 
-        /* Mobile Optimizations */
         @media (max-width: 768px) {
             #top-bar {
                 height: 110px;
@@ -896,7 +884,6 @@
 <div id="pulse-bg"></div>
 <div id="scanline"></div>
 
-<!-- Particle Effects -->
 <script>
     for(let i = 0; i < 50; i++) {
         const particle = document.createElement('div');
@@ -909,9 +896,7 @@
     }
 </script>
 
-<!-- VS Screen Animation (WITH FIRE) -->
 <div id="vs-overlay">
-    <!-- Dynamic Fire & Destruction elements will be injected here by JS -->
     <div class="vs-container">
         <div class="vs-players">
             <div class="vs-player left">
@@ -929,30 +914,26 @@
     </div>
 </div>
 
-<!-- Achievement Popup -->
 <div id="achievement-popup">
     <div class="achievement-title">ACHIEVEMENT UNLOCKED</div>
     <div class="achievement-desc" id="achievement-text"></div>
 </div>
 
-<!-- Login Overlay -->
 <div id="login-overlay">
     <div class="overlay-header">ESTABLISH_IDENTITY</div>
     <input type="text" id="playerNameInput" placeholder="PLAYER_NAME" autocomplete="off" maxlength="20">
     <div class="btn" onclick="savePlayerName()">INITIALIZE</div>
 </div>
 
-<!-- TOP BAR (Reorganized) -->
 <div id="top-bar">
     <div id="terminal-section">
         <div id="terminal">> ID: UNKNOWN<br>> STATUS: READY<br>> SYSTEM: ONLINE</div>
     </div>
     
     <div id="xp-center-section">
-        <!-- Original global-xp-container moved inside here -->
         <div id="global-xp-container">
-            <span id="total-xp-val">10000</span> <!-- يبدأ من 10000 -->
-            <span id="total-xp-label">SYSTEM_XP_NEXUS</span>
+            <span id="total-xp-val">00000</span>
+            <span id="total-xp-label">STUDY_MINUTES</span>
         </div>
     </div>
     
@@ -978,7 +959,6 @@
 
 <div id="level-roadmap"></div>
 
-<!-- Task Overlay -->
 <div id="overlay">
     <div class="overlay-header">BREACH_SEQUENCE</div>
     <input type="text" id="targetName" placeholder="SECTOR_NAME" autocomplete="off">
@@ -989,7 +969,6 @@
     </div>
 </div>
 
-<!-- Shop Overlay -->
 <div id="shop-overlay">
     <div class="overlay-header">NEURAL_MARKET</div>
     <div style="margin-bottom: 20px; font-size: 16px;">💠 CREDITS: <span id="credits-display">0</span></div>
@@ -997,7 +976,6 @@
     <div class="btn danger" onclick="closeShop()">EXIT_MARKET</div>
 </div>
 
-<!-- Skills Overlay -->
 <div id="skills-overlay">
     <div class="overlay-header">SKILL_MATRIX</div>
     <div style="margin-bottom: 20px; font-size: 14px;">💠 SKILL POINTS: <span id="skill-points-display">0</span></div>
@@ -1005,13 +983,11 @@
     <div class="btn danger" onclick="closeSkills()">EXIT_MATRIX</div>
 </div>
 
-<!-- Control Buttons -->
 <canvas id="network"></canvas>
 <div id="shop-btn" class="control-btn" onclick="openShop()">[ MARKET ]</div>
 <div id="skills-btn" class="control-btn" onclick="openSkills()">[ SKILLS ]</div>
 <div id="reset-btn" class="control-btn" onclick="resetTasksOnly()">[ REFRESH ]</div>
 
-<!-- ========== INSTALL BANNER (NEW) ========== -->
 <div id="install-banner">
     <div class="install-message">
         <span class="install-icon">📱</span>
@@ -1024,7 +1000,7 @@
 </div>
 
 <script>
-    // ========== Service Worker & PWA Install ==========
+    // ========== PWA Install ==========
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
@@ -1037,27 +1013,22 @@
         });
     }
 
-    // تخزين حدث التثبيت
     let deferredPrompt;
     const installBanner = document.getElementById('install-banner');
     const installButton = document.getElementById('install-button');
     const dismissButton = document.getElementById('dismiss-install');
 
     window.addEventListener('beforeinstallprompt', (e) => {
-        // منع المتصفح من إظهار النافذة التلقائية
         e.preventDefault();
         deferredPrompt = e;
-        // إظهار اللافتة المخصصة
         installBanner.style.display = 'flex';
     });
 
     installButton.addEventListener('click', async () => {
         if (!deferredPrompt) return;
-        // إظهار نافذة التثبيت الأصلية
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
         console.log(`User response: ${outcome}`);
-        // إخفاء اللافتة سواء ثبت أو لا
         installBanner.style.display = 'none';
         deferredPrompt = null;
     });
@@ -1066,14 +1037,13 @@
         installBanner.style.display = 'none';
     });
 
-    // إخفاء اللافتة إذا تم تثبيت التطبيق بالفعل
     window.addEventListener('appinstalled', () => {
         installBanner.style.display = 'none';
         deferredPrompt = null;
         console.log('PWA installed');
     });
 
-    // ========== باقي الكود كما هو (state, nodes, functions...) ==========
+    // ========== GAME CODE (مع التعديلات المطلوبة فقط) ==========
     const canvas = document.getElementById('network');
     const ctx = canvas.getContext('2d');
     const terminal = document.getElementById('terminal');
@@ -1081,7 +1051,7 @@
     let nodes = [];
     let state = { 
         activeIdx: null, startTime: null, duration: 0, isBreaching: false, taskName: "",
-        exp: 0, level: 1, totalXP: 10000, playerName: "", credits: 1000, skillPoints: 0,
+        exp: 0, level: 1, totalStudyMinutes: 0, playerName: "", credits: 1000, skillPoints: 0,
         skills: { speed: 0, efficiency: 0, defense: 0, luck: 0 },
         inventory: { xpBooster: 0, timeReducer: 0, shield: 0 },
         achievements: []
@@ -1090,7 +1060,6 @@
     const ranks = ["SHADOW", "INITIATE", "OPERATIVE", "BREACHER", "ENFORCER", "VANGUARD", "PHANTOM", "ASSASSIN", "SPECTRE", "ELITE_AGENT", "WARLORD", "OVERLORD", "ARCHITECT", "SYSTEM_GHOST", "GOD_MODE"];
     const rankIcons = ["👤", "⚡", "🔮", "💠", "🛡️", "⚔️", "🌙", "🗡️", "👁️", "💎", "👑", "⭐", "🌌", "🔥", "∞"];
 
-    // Shop Items
     const shopItems = [
         { id: 'xpBooster', name: 'XP BOOSTER', icon: '📈', price: 500, effect: '2x XP for 1 hour' },
         { id: 'timeReducer', name: 'TIME REDUCER', icon: '⏰', price: 300, effect: '-20% task time' },
@@ -1107,8 +1076,9 @@
         return multiplier;
     }
 
+    // ⚠️ تم إلغاء خصم الوقت تماماً
     function calculateTimeReduction() {
-        return 1 - (state.skills.speed * 0.05) - (state.inventory.timeReducer * 0.2);
+        return 1; // الوقت الأصلي بالضبط
     }
 
     function showAchievement(name, description) {
@@ -1119,7 +1089,7 @@
         setTimeout(() => {
             document.getElementById('achievement-popup').classList.remove('show');
         }, 4000);
-        state.totalXP += 500;
+        state.totalStudyMinutes += 500; // هدية دقائق مجانية مع الإنجاز (اختياري)
         updateStatsUI();
     }
 
@@ -1141,7 +1111,8 @@
         document.getElementById('rank-icon').innerText = rankIcons[rankIdx];
         document.getElementById('xp-text').innerText = `${Math.floor(state.exp)} / ${req} XP`;
         document.getElementById('xp-bar-fill').style.width = `${Math.min((state.exp / req) * 100, 100)}%`;
-        document.getElementById('total-xp-val').innerText = state.totalXP.toString().padStart(5, '0');
+        // عرض عداد الدقائق فقط
+        document.getElementById('total-xp-val').innerText = state.totalStudyMinutes.toString().padStart(5, '0');
         
         const multiplier = calculateXPMultiplier();
         const statsPanel = document.getElementById('stats-panel');
@@ -1161,36 +1132,21 @@
     function renderRoadmap() {
         const roadmap = document.getElementById('level-roadmap');
         roadmap.innerHTML = '';
-        
-        // Show all 100 levels
         for(let i = 1; i <= 100; i++) {
             const isUnlocked = i <= state.level;
             const isCurrent = i === state.level;
             const step = document.createElement('div');
             step.className = `lvl-step ${isUnlocked ? 'unlocked' : 'locked'} ${isCurrent ? 'current' : ''}`;
-            
             const icon = i % 10 === 0 ? '👑' : i % 5 === 0 ? '💎' : '💠';
-            
-            step.innerHTML = `
-                <div class="lvl-icon">${icon}</div>
-                <div class="lvl-number">LVL ${i}</div>
-            `;
-            
+            step.innerHTML = `<div class="lvl-icon">${icon}</div><div class="lvl-number">LVL ${i}</div>`;
             step.onclick = () => {
-                if (isUnlocked) {
-                    alert(`Level ${i}\nRequired XP: ${getRequiredXP(i)}\nBonus: ${Math.floor(100 * Math.pow(1.1, i - 1))} credits`);
-                }
+                if (isUnlocked) alert(`Level ${i}\nRequired XP: ${getRequiredXP(i)}\nBonus: ${Math.floor(100 * Math.pow(1.1, i - 1))} credits`);
             };
-            
             roadmap.appendChild(step);
         }
-        
-        // Scroll to current level
         setTimeout(() => {
             const currentLevel = document.querySelector('.lvl-step.current');
-            if (currentLevel) {
-                currentLevel.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-            }
+            if (currentLevel) currentLevel.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         }, 100);
     }
 
@@ -1203,7 +1159,6 @@
     function renderShop() {
         const shopGrid = document.getElementById('shop-items');
         shopGrid.innerHTML = '';
-        
         shopItems.forEach(item => {
             const itemDiv = document.createElement('div');
             itemDiv.className = `shop-item ${state.credits < item.price ? 'disabled' : ''}`;
@@ -1213,7 +1168,6 @@
                 <div class="shop-price">💠 ${item.price}</div>
                 <div style="font-size: 11px; margin-top: 5px;">${item.effect}</div>
             `;
-            
             itemDiv.onclick = () => purchaseItem(item);
             shopGrid.appendChild(itemDiv);
         });
@@ -1222,7 +1176,6 @@
     function purchaseItem(item) {
         if (state.credits >= item.price) {
             state.credits -= item.price;
-            
             if (item.id === 'skillPoint') {
                 state.skillPoints++;
                 showAchievement('SKILL POINT ACQUIRED', 'Enhance your abilities in the Skill Matrix');
@@ -1230,16 +1183,12 @@
                 state.inventory[item.id]++;
                 showAchievement('ITEM PURCHASED', `${item.name} added to inventory`);
             }
-            
             updateStatsUI();
             closeShop();
         }
     }
 
-    function closeShop() {
-        document.getElementById('shop-overlay').style.display = 'none';
-    }
-
+    function closeShop() { document.getElementById('shop-overlay').style.display = 'none'; }
     function openSkills() {
         document.getElementById('skills-overlay').style.display = 'flex';
         document.getElementById('skill-points-display').innerText = state.skillPoints;
@@ -1249,10 +1198,8 @@
     function renderSkills() {
         const skillsTree = document.getElementById('skills-tree');
         skillsTree.innerHTML = '';
-        
         const skillNames = ['speed', 'efficiency', 'defense', 'luck'];
         const skillIcons = ['⚡', '📊', '🛡️', '🍀'];
-        
         skillNames.forEach((skill, idx) => {
             const skillDiv = document.createElement('div');
             skillDiv.className = `skill-node ${state.skills[skill] > 0 ? 'unlocked' : ''}`;
@@ -1261,7 +1208,6 @@
                 <div>${skill.toUpperCase()}</div>
                 <div class="skill-level">LVL ${state.skills[skill]}</div>
             `;
-            
             skillDiv.onclick = () => upgradeSkill(skill);
             skillsTree.appendChild(skillDiv);
         });
@@ -1278,10 +1224,7 @@
         }
     }
 
-    function closeSkills() {
-        document.getElementById('skills-overlay').style.display = 'none';
-    }
-
+    function closeSkills() { document.getElementById('skills-overlay').style.display = 'none'; }
     function closeOverlay() {
         document.getElementById('overlay').style.display = 'none';
         state.activeIdx = null;
@@ -1292,7 +1235,7 @@
             nodes: nodes.map(n => ({ status: n.status, label: n.label, edgeProgress: n.edgeProgress })),
             timer: state.isBreaching ? { activeIdx: state.activeIdx, startTime: state.startTime, duration: state.duration, taskName: state.taskName } : null,
             progression: {
-                exp: state.exp, level: state.level, totalXP: state.totalXP, 
+                exp: state.exp, level: state.level, totalStudyMinutes: state.totalStudyMinutes,
                 playerName: state.playerName, credits: state.credits, skillPoints: state.skillPoints,
                 skills: state.skills, inventory: state.inventory, achievements: state.achievements
             }
@@ -1301,44 +1244,35 @@
     }
 
     function createNodes() {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
+        const w = window.innerWidth, h = window.innerHeight;
         nodes = [
-            { x: w * 0.08, y: h * 0.50, status: 'available', label: '01', next: 1, edgeProgress: 0, difficulty: 1 },
-            { x: w * 0.17, y: h * 0.32, status: 'locked', label: '02', next: 2, edgeProgress: 0, difficulty: 1.2 },
-            { x: w * 0.26, y: h * 0.68, status: 'locked', label: '03', next: 3, edgeProgress: 0, difficulty: 1.5 },
-            { x: w * 0.35, y: h * 0.42, status: 'locked', label: '04', next: 4, edgeProgress: 0, difficulty: 1.8 },
-            { x: w * 0.44, y: h * 0.58, status: 'locked', label: '05', next: 5, edgeProgress: 0, difficulty: 2 },
-            { x: w * 0.53, y: h * 0.32, status: 'locked', label: '06', next: 6, edgeProgress: 0, difficulty: 2.5 },
-            { x: w * 0.62, y: h * 0.68, status: 'locked', label: '07', next: 7, edgeProgress: 0, difficulty: 3 },
-            { x: w * 0.71, y: h * 0.42, status: 'locked', label: '08', next: 8, edgeProgress: 0, difficulty: 3.5 },
-            { x: w * 0.80, y: h * 0.58, status: 'locked', label: '09', next: 9, edgeProgress: 0, difficulty: 4 },
-            { x: w * 0.89, y: h * 0.37, status: 'locked', label: '10', next: 10, edgeProgress: 0, difficulty: 5 },
-            { x: w * 0.95, y: h * 0.50, status: 'locked', label: 'CORE', next: null, edgeProgress: 0, difficulty: 10 }
+            { x: w*0.08, y: h*0.50, status: 'available', label: '01', next: 1, edgeProgress: 0, difficulty: 1 },
+            { x: w*0.17, y: h*0.32, status: 'locked', label: '02', next: 2, edgeProgress: 0, difficulty: 1.2 },
+            { x: w*0.26, y: h*0.68, status: 'locked', label: '03', next: 3, edgeProgress: 0, difficulty: 1.5 },
+            { x: w*0.35, y: h*0.42, status: 'locked', label: '04', next: 4, edgeProgress: 0, difficulty: 1.8 },
+            { x: w*0.44, y: h*0.58, status: 'locked', label: '05', next: 5, edgeProgress: 0, difficulty: 2 },
+            { x: w*0.53, y: h*0.32, status: 'locked', label: '06', next: 6, edgeProgress: 0, difficulty: 2.5 },
+            { x: w*0.62, y: h*0.68, status: 'locked', label: '07', next: 7, edgeProgress: 0, difficulty: 3 },
+            { x: w*0.71, y: h*0.42, status: 'locked', label: '08', next: 8, edgeProgress: 0, difficulty: 3.5 },
+            { x: w*0.80, y: h*0.58, status: 'locked', label: '09', next: 9, edgeProgress: 0, difficulty: 4 },
+            { x: w*0.89, y: h*0.37, status: 'locked', label: '10', next: 10, edgeProgress: 0, difficulty: 5 },
+            { x: w*0.95, y: h*0.50, status: 'locked', label: 'CORE', next: null, edgeProgress: 0, difficulty: 10 }
         ];
     }
 
     function resetTasksOnly() {
-        if(confirm("REFRESH ALL TASKS? (PROGRESS AND RESOURCES REMAIN)")) { 
-            state.isBreaching = false;
-            state.activeIdx = null;
-            state.taskName = "";
-            state.startTime = null;
-            createNodes();
-            saveToStorage();
-            updateStatsUI();
+        if(confirm("REFRESH ALL TASKS? (PROGRESS AND RESOURCES REMAIN)")) {
+            state.isBreaching = false; state.activeIdx = null; state.taskName = ""; state.startTime = null;
+            createNodes(); saveToStorage(); updateStatsUI();
             terminal.innerHTML = `> ID: ${state.playerName}<br>> STATUS: SYSTEM_REBOOTED<br>> NODES: RESET`;
         }
     }
 
     function init() {
         const dpr = window.devicePixelRatio || 1;
-        canvas.width = window.innerWidth * dpr;
-        canvas.height = window.innerHeight * dpr;
+        canvas.width = window.innerWidth * dpr; canvas.height = window.innerHeight * dpr;
         ctx.scale(dpr, dpr);
-        canvas.style.width = window.innerWidth + 'px';
-        canvas.style.height = window.innerHeight + 'px';
-        
+        canvas.style.width = window.innerWidth + 'px'; canvas.style.height = window.innerHeight + 'px';
         if (nodes.length === 0) {
             createNodes();
             const saved = localStorage.getItem('tromavoid_premium_v5');
@@ -1346,156 +1280,89 @@
                 const parsed = JSON.parse(saved);
                 if (parsed.progression) Object.assign(state, parsed.progression);
                 if (parsed.nodes) parsed.nodes.forEach((n, i) => { if(nodes[i]) Object.assign(nodes[i], n); });
-                
                 if (parsed.timer) {
                     const elapsed = (Date.now() - parsed.timer.startTime) / 1000;
-                    if (elapsed >= parsed.timer.duration) { 
+                    if (elapsed >= parsed.timer.duration) {
                         Object.assign(state, parsed.timer);
                         state.isBreaching = true;
-                        completeNode(); 
+                        completeNode();
                     } else {
-                        Object.assign(state, parsed.timer); 
-                        state.isBreaching = true; 
+                        Object.assign(state, parsed.timer);
+                        state.isBreaching = true;
                     }
                 }
             }
         }
-        
-        if (!state.playerName) {
-            document.getElementById('login-overlay').style.display = 'flex';
-        }
-        
+        if (!state.playerName) document.getElementById('login-overlay').style.display = 'flex';
         updateStatsUI();
         draw();
     }
 
     function draw() {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-        
-        // Draw grid
-        ctx.strokeStyle = 'rgba(162, 228, 243, 0.05)';
-        ctx.lineWidth = 1;
-        for(let i = 0; i < window.innerWidth; i += 50) {
-            ctx.beginPath();
-            ctx.moveTo(i, 0);
-            ctx.lineTo(i, window.innerHeight);
-            ctx.stroke();
-        }
-        for(let i = 0; i < window.innerHeight; i += 50) {
-            ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(window.innerWidth, i);
-            ctx.stroke();
-        }
-        
-        const pulse = Math.sin(Date.now() / 300) * 4;
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+        ctx.strokeStyle = 'rgba(162, 228, 243, 0.05)'; ctx.lineWidth = 1;
+        for(let i=0; i<window.innerWidth; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,window.innerHeight); ctx.stroke(); }
+        for(let i=0; i<window.innerHeight; i+=50) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(window.innerWidth,i); ctx.stroke(); }
+        const pulse = Math.sin(Date.now()/300)*4;
 
         if (state.isBreaching && state.activeIdx !== null) {
             const elapsed = (Date.now() - state.startTime) / 1000;
-            const progress = Math.min(elapsed / (state.duration * calculateTimeReduction()), 1);
+            // استخدام الوقت الأصلي بدون خصم
+            const progress = Math.min(elapsed / state.duration, 1);
             nodes[state.activeIdx].edgeProgress = progress;
-            const rem = Math.max(state.duration * calculateTimeReduction() - elapsed, 0);
-            terminal.innerHTML = `> PLAYER: ${state.playerName}<br>> BREACHING: ${state.taskName}<br>> TIME: ${Math.floor(rem/60)}:${Math.floor(rem%60).toString().padStart(2,'0')}<br>> PROGRESS: ${(progress * 100).toFixed(2)}%<br>> MULTIPLIER: ${calculateXPMultiplier().toFixed(1)}x`;
+            const rem = Math.max(state.duration - elapsed, 0);
+            terminal.innerHTML = `> PLAYER: ${state.playerName}<br>> BREACHING: ${state.taskName}<br>> TIME: ${Math.floor(rem/60)}:${Math.floor(rem%60).toString().padStart(2,'0')}<br>> PROGRESS: ${(progress*100).toFixed(2)}%<br>> MULTIPLIER: ${calculateXPMultiplier().toFixed(1)}x`;
             if (progress >= 1) completeNode();
         }
-        
-        // Draw connections with glow effect
+
         nodes.forEach((n, i) => {
             if (n.next !== null) {
                 const nxt = nodes[n.next];
-                ctx.beginPath();
-                ctx.moveTo(n.x, n.y);
-                ctx.lineTo(nxt.x, nxt.y);
-                ctx.strokeStyle = '#111';
-                ctx.lineWidth = 4;
-                ctx.stroke();
-                
+                ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(nxt.x, nxt.y);
+                ctx.strokeStyle = '#111'; ctx.lineWidth = 4; ctx.stroke();
                 if (n.edgeProgress > 0) {
-                    ctx.beginPath();
-                    ctx.moveTo(n.x, n.y);
-                    ctx.lineTo(n.x + (nxt.x - n.x) * n.edgeProgress, n.y + (nxt.y - n.y) * n.edgeProgress);
-                    
-                    // Gradient for progress line
-                    const gradient = ctx.createLinearGradient(n.x, n.y, nxt.x, nxt.y);
-                    gradient.addColorStop(0, 'rgba(162, 228, 243, 0.8)');
-                    gradient.addColorStop(1, 'rgba(255, 255, 255, 1)');
-                    
-                    ctx.strokeStyle = gradient;
-                    ctx.lineWidth = 6;
-                    ctx.stroke();
-                    ctx.shadowBlur = 20;
-                    ctx.shadowColor = '#A2E4F3';
-                    ctx.stroke();
-                    ctx.shadowBlur = 0;
+                    ctx.beginPath(); ctx.moveTo(n.x, n.y); ctx.lineTo(n.x+(nxt.x-n.x)*n.edgeProgress, n.y+(nxt.y-n.y)*n.edgeProgress);
+                    const grad = ctx.createLinearGradient(n.x, n.y, nxt.x, nxt.y);
+                    grad.addColorStop(0, 'rgba(162,228,243,0.8)'); grad.addColorStop(1, '#fff');
+                    ctx.strokeStyle = grad; ctx.lineWidth = 6; ctx.stroke();
+                    ctx.shadowBlur = 20; ctx.shadowColor = '#A2E4F3'; ctx.stroke(); ctx.shadowBlur = 0;
                 }
             }
-            
-            // Draw node with effects
-            ctx.beginPath(); 
-            let r = (n.label === 'CORE') ? 38 : 30;
-            if (i === state.activeIdx && state.isBreaching) {
-                r += pulse;
-                ctx.shadowBlur = 30 + pulse * 2;
-                ctx.shadowColor = '#A2E4F3';
-            }
-            
+            ctx.beginPath();
+            let r = (n.label==='CORE')?38:30;
+            if (i===state.activeIdx && state.isBreaching) { r += pulse; ctx.shadowBlur = 30+pulse*2; ctx.shadowColor = '#A2E4F3'; }
             ctx.arc(n.x, n.y, r, 0, Math.PI*2);
-            
-            // Node gradients
             let gradient;
-            if (n.status === 'completed' || n.label === 'CORE') {
+            if (n.status==='completed'||n.label==='CORE') {
                 gradient = ctx.createRadialGradient(n.x-5, n.y-5, 5, n.x, n.y, r);
-                gradient.addColorStop(0, '#fff');
-                gradient.addColorStop(1, '#A2E4F3');
+                gradient.addColorStop(0,'#fff'); gradient.addColorStop(1,'#A2E4F3');
                 ctx.fillStyle = gradient;
-            } else if (i === state.activeIdx && state.isBreaching) {
-                ctx.fillStyle = '#000';
-                ctx.strokeStyle = '#A2E4F3';
-                ctx.lineWidth = 6;
-                ctx.stroke();
-            } else if (n.status === 'available') {
+            } else if (i===state.activeIdx && state.isBreaching) {
+                ctx.fillStyle = '#000'; ctx.strokeStyle = '#A2E4F3'; ctx.lineWidth = 6; ctx.stroke();
+            } else if (n.status==='available') {
                 gradient = ctx.createRadialGradient(n.x-5, n.y-5, 5, n.x, n.y, r);
-                gradient.addColorStop(0, '#1a1a2a');
-                gradient.addColorStop(1, '#0a0a0a');
-                ctx.fillStyle = gradient;
-                ctx.strokeStyle = '#A2E4F3';
-                ctx.lineWidth = 3;
-                ctx.stroke();
+                gradient.addColorStop(0,'#1a1a2a'); gradient.addColorStop(1,'#0a0a0a');
+                ctx.fillStyle = gradient; ctx.strokeStyle = '#A2E4F3'; ctx.lineWidth = 3; ctx.stroke();
             } else {
                 gradient = ctx.createRadialGradient(n.x-5, n.y-5, 5, n.x, n.y, r);
-                gradient.addColorStop(0, '#151515');
-                gradient.addColorStop(1, '#050505');
-                ctx.fillStyle = gradient;
-                ctx.strokeStyle = '#222';
-                ctx.lineWidth = 2;
-                ctx.stroke();
+                gradient.addColorStop(0,'#151515'); gradient.addColorStop(1,'#050505');
+                ctx.fillStyle = gradient; ctx.strokeStyle = '#222'; ctx.lineWidth = 2; ctx.stroke();
             }
-            
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            
-            // Node labels
-            ctx.fillStyle = (n.status === 'locked' && n.label !== 'CORE') ? '#555' : '#fff';
-            ctx.font = 'bold 14px monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            ctx.fill(); ctx.shadowBlur = 0;
+            ctx.fillStyle = (n.status==='locked'&&n.label!=='CORE')?'#555':'#fff';
+            ctx.font = 'bold 14px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(n.label, n.x, n.y);
-            
-            // Difficulty indicator
-            if (n.difficulty && n.status !== 'locked') {
-                ctx.font = '10px monospace';
-                ctx.fillStyle = '#A2E4F3';
-                ctx.fillText(`⚡${n.difficulty.toFixed(1)}`, n.x, n.y + 50);
+            if (n.difficulty && n.status!=='locked') {
+                ctx.font = '10px monospace'; ctx.fillStyle = '#A2E4F3';
+                ctx.fillText(`⚡${n.difficulty.toFixed(1)}`, n.x, n.y+50);
             }
         });
-        
         requestAnimationFrame(draw);
     }
 
     canvas.onclick = (e) => {
         nodes.forEach((n, i) => {
-            if (Math.sqrt((e.clientX - n.x)**2 + (e.clientY - n.y)**2) < 40 && n.status === 'available' && !state.isBreaching) {
+            if (Math.sqrt((e.clientX-n.x)**2+(e.clientY-n.y)**2) < 40 && n.status==='available' && !state.isBreaching) {
                 state.activeIdx = i;
                 document.getElementById('overlay').style.display = 'flex';
                 document.getElementById('targetName').value = '';
@@ -1504,82 +1371,54 @@
         });
     };
 
-    // NEW: VS Animation function with Fire Effects
     function playVSAnimation() {
         return new Promise((resolve) => {
             const vsOverlay = document.getElementById('vs-overlay');
-            const playerName = document.getElementById('vs-player-name');
-            const targetName = document.getElementById('vs-target-name');
-            
-            playerName.innerText = state.playerName || 'PLAYER';
-            targetName.innerText = state.taskName;
-            
-            // Clear any existing fire/spark elements
-            const existingFire = vsOverlay.querySelectorAll('.fire-particle, .spark');
-            existingFire.forEach(el => el.remove());
-            
-            // Add fire particles
-            for (let i = 0; i < 30; i++) {
-                const fire = document.createElement('div');
-                fire.className = 'fire-particle';
-                fire.style.left = Math.random() * 100 + '%';
-                fire.style.animationDelay = (Math.random() * 2) + 's';
-                fire.style.animationDuration = (1.5 + Math.random() * 2) + 's';
-                fire.style.width = (5 + Math.random() * 20) + 'px';
-                fire.style.height = fire.style.width;
+            document.getElementById('vs-player-name').innerText = state.playerName || 'PLAYER';
+            document.getElementById('vs-target-name').innerText = state.taskName;
+            vsOverlay.querySelectorAll('.fire-particle, .spark').forEach(el => el.remove());
+            for(let i=0; i<30; i++) {
+                const fire = document.createElement('div'); fire.className = 'fire-particle';
+                fire.style.left = Math.random()*100+'%'; fire.style.animationDelay = (Math.random()*2)+'s';
+                fire.style.animationDuration = (1.5+Math.random()*2)+'s';
+                fire.style.width = fire.style.height = (5+Math.random()*20)+'px';
                 vsOverlay.appendChild(fire);
             }
-            
-            // Add sparks
-            for (let i = 0; i < 50; i++) {
-                const spark = document.createElement('div');
-                spark.className = 'spark';
-                spark.style.left = Math.random() * 100 + '%';
-                spark.style.top = Math.random() * 100 + '%';
-                spark.style.animationDelay = (Math.random() * 1.5) + 's';
+            for(let i=0; i<50; i++) {
+                const spark = document.createElement('div'); spark.className = 'spark';
+                spark.style.left = Math.random()*100+'%'; spark.style.top = Math.random()*100+'%';
+                spark.style.animationDelay = (Math.random()*1.5)+'s';
                 vsOverlay.appendChild(spark);
             }
-            
             vsOverlay.style.display = 'flex';
-            
-            setTimeout(() => {
-                vsOverlay.style.display = 'none';
-                resolve();
-            }, 4000);
+            setTimeout(() => { vsOverlay.style.display = 'none'; resolve(); }, 4000);
         });
     }
 
-    // Modified engage function to include VS animation
     async function engage() {
         const name = document.getElementById('targetName').value;
         const time = document.getElementById('targetTime').value;
         if (!name || !time || time < 1) return;
-        
         state.taskName = name.toUpperCase();
         state.duration = time * 60;
-        
         document.getElementById('overlay').style.display = 'none';
-        
-        // Play VS Animation before starting timer
         await playVSAnimation();
-        
         state.startTime = Date.now();
         state.isBreaching = true;
         nodes[state.activeIdx].label = state.taskName;
-        
         saveToStorage();
     }
 
     function completeNode() {
-        const baseReward = Math.floor(state.duration / 60);
+        const baseMinutes = Math.floor(state.duration / 60); // الدقائق الأصلية
         const multiplier = calculateXPMultiplier();
-        const reward = Math.floor(baseReward * multiplier * nodes[state.activeIdx].difficulty);
+        const rewardXP = Math.floor(baseMinutes * multiplier * nodes[state.activeIdx].difficulty);
         
-        state.totalXP += reward;
-        state.exp += reward;
-        state.credits += reward * 2;
+        // زيادة دقائق المذاكرة فقط (بدون مضاعفات)
+        state.totalStudyMinutes += baseMinutes;
+        state.exp += rewardXP;
+        state.credits += rewardXP * 2;
         
-        // Check for level up
         let leveledUp = false;
         while (state.exp >= getRequiredXP(state.level)) {
             state.exp -= getRequiredXP(state.level);
@@ -1587,27 +1426,13 @@
             state.skillPoints++;
             leveledUp = true;
         }
-        
         if (leveledUp) {
-            showAchievement('LEVEL UP!', `Advanced to Level ${state.level} - ${ranks[Math.min(Math.floor((state.level - 1) / 7), ranks.length - 1)]}`);
+            showAchievement('LEVEL UP!', `Advanced to Level ${state.level} - ${ranks[Math.min(Math.floor((state.level-1)/7), ranks.length-1)]}`);
         }
-        
-        // Check for achievements
-        if (state.level >= 10 && !state.achievements.includes('VETERAN')) {
-            showAchievement('VETERAN AGENT', 'Reached Level 10');
-        }
-        
-        if (state.totalXP >= 20000 && !state.achievements.includes('XP MASTER')) {
-            showAchievement('XP MASTER', 'Accumulated 20,000 Total XP');
-        }
-        
-        if (state.level >= 50 && !state.achievements.includes('LEGEND')) {
-            showAchievement('LEGENDARY STATUS', 'Reached Level 50!');
-        }
-        
-        if (state.level >= 100 && !state.achievements.includes('GOD')) {
-            showAchievement('GOD MODE', 'Reached Level 100! You are unstoppable!');
-        }
+        if (state.level>=10 && !state.achievements.includes('VETERAN')) showAchievement('VETERAN AGENT', 'Reached Level 10');
+        if (state.totalStudyMinutes >= 20000 && !state.achievements.includes('STUDY MASTER')) showAchievement('STUDY MASTER', '20,000 Study Minutes!');
+        if (state.level>=50 && !state.achievements.includes('LEGEND')) showAchievement('LEGENDARY STATUS', 'Reached Level 50!');
+        if (state.level>=100 && !state.achievements.includes('GOD')) showAchievement('GOD MODE', 'Reached Level 100!');
         
         nodes[state.activeIdx].status = 'completed';
         const nextIdx = nodes[state.activeIdx].next;
@@ -1617,52 +1442,32 @@
         } else {
             showAchievement('CORE BREACHED!', 'You have reached the system core!');
         }
-        
         state.isBreaching = false;
         state.activeIdx = null;
         updateStatsUI();
         saveToStorage();
     }
 
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') saveToStorage();
-    });
-
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveToStorage(); });
     window.addEventListener('resize', () => {
         const dpr = window.devicePixelRatio || 1;
-        const oldW = canvas.width / dpr;
-        const oldH = canvas.height / dpr;
-        canvas.width = window.innerWidth * dpr;
-        canvas.height = window.innerHeight * dpr;
+        const oldW = canvas.width/dpr, oldH = canvas.height/dpr;
+        canvas.width = window.innerWidth*dpr; canvas.height = window.innerHeight*dpr;
         ctx.scale(dpr, dpr);
-        canvas.style.width = window.innerWidth + 'px';
-        canvas.style.height = window.innerHeight + 'px';
-        nodes.forEach(n => {
-            n.x = (n.x / oldW) * window.innerWidth;
-            n.y = (n.y / oldH) * window.innerHeight;
-        });
+        canvas.style.width = window.innerWidth+'px'; canvas.style.height = window.innerHeight+'px';
+        nodes.forEach(n => { n.x = (n.x/oldW)*window.innerWidth; n.y = (n.y/oldH)*window.innerHeight; });
     });
-
-    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('shop-overlay').style.display = 'none';
-            document.getElementById('skills-overlay').style.display = 'none';
+        if (e.key==='Escape') {
+            document.getElementById('overlay').style.display='none';
+            document.getElementById('shop-overlay').style.display='none';
+            document.getElementById('skills-overlay').style.display='none';
         }
-        if (e.key === 'm' || e.key === 'M') {
-            if (document.getElementById('shop-overlay').style.display === 'flex') {
-                closeShop();
-            } else {
-                openShop();
-            }
+        if (e.key==='m'||e.key==='M') {
+            if (document.getElementById('shop-overlay').style.display==='flex') closeShop(); else openShop();
         }
-        if (e.key === 'k' || e.key === 'K') {
-            if (document.getElementById('skills-overlay').style.display === 'flex') {
-                closeSkills();
-            } else {
-                openSkills();
-            }
+        if (e.key==='k'||e.key==='K') {
+            if (document.getElementById('skills-overlay').style.display==='flex') closeSkills(); else openSkills();
         }
     });
 
