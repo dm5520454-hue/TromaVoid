@@ -3461,4 +3461,1196 @@
             document.getElementById('vs-avatar-left').innerText = state.customization.avatar||'👤';
             ov.querySelectorAll('.fire-particle,.spark').forEach(e=>e.remove());
             for(let i=0;i<30;i++) { const f=document.createElement('div'); f.className='fire-particle'; f.style.left=Math.random()*100+'%'; f.style.animationDelay=Math.random()*2+'s'; f.style.animationDuration=(1.5+Math.random()*2)+'s'; f.style.width=f.style.height=(5+Math.random()*20)+'px'; ov.appendChild(f); }
-            for(let i=0;i<50;i++) { const s=document.createElement('div'); s.className='spark'; s.style.left=
+            for(let i=0;i<50;i++) { const s=document.createElement('div'); s.className='spark'; s.style.left=Math.random()*100+'%'; s.style.top=Math.random()*100+'%'; s.style.animationDelay=Math.random()*1.5+'s'; ov.appendChild(s); }
+            ov.style.display='flex';
+
+            // Play real MK audio - Round 1 Fight!
+            const mkAudio = document.getElementById('mk-audio');
+            if(mkAudio) {
+                mkAudio.pause();
+                mkAudio.currentTime = 0;
+                mkAudio.volume = 1.0;
+                mkAudio.play().catch(()=>{});
+                // Stop after 4s (just the Round 1 FIGHT part)
+                setTimeout(() => { mkAudio.pause(); mkAudio.currentTime = 0; }, 4000);
+            } else {
+                // Fallback to synth if audio not loaded
+                try { sfx.mkFight(); } catch(e) {}
+            }
+
+            setTimeout(()=>{ ov.style.display='none'; resolve(); }, 4000);
+        });
+    }
+
+    async function engage() {
+        const name = document.getElementById('targetName').value, time = document.getElementById('targetTime').value;
+        if(!name||!time||time<1) return;
+        state.taskName = name.toUpperCase(); state.duration = time*60;
+        document.getElementById('overlay').style.display='none';
+        await playVSAnimation();
+        state.startTime = Date.now(); state.isBreaching = true;
+        nodes[state.activeIdx].label = state.taskName;
+        saveToStorage();
+    }
+
+    function completeNode() {
+        if(state.activeIdx !== null && nodes[state.activeIdx]) {
+            nodes[state.activeIdx].edgeProgress = 1;
+        }
+        const baseMin = Math.floor(state.duration/60);
+        const rewardXP = Math.floor(baseMin * calculateXPMultiplier() * nodes[state.activeIdx].difficulty);
+        state.totalStudyMinutes += baseMin;
+        state.exp += rewardXP;
+        state.credits += rewardXP*2;
+        state.totalTasksCompleted++;
+
+        // Track today's minutes - dedicated persistent log
+        addMinutesToDailyLog(baseMin);
+        
+        // PREMIUM: XP Rain + Combo + Sounds
+        spawnXPRain(rewardXP, innerWidth/2, innerHeight/2);
+        incrementCombo();
+        sfx.complete();
+        // Motivating alarm — plays after a short delay
+        setTimeout(() => sfx.alarm(), 600);
+
+        let leveled=false;
+        while(state.exp >= getRequiredXP(state.level)) {
+            state.exp -= getRequiredXP(state.level); state.level++; state.skillPoints++; leveled=true;
+            state.levelHistory.push({ level: state.level, date: new Date().toLocaleDateString(), task: state.taskName });
+        }
+        if(leveled) { showAchievement('LEVEL_UP',`Advanced to Level ${state.level}`); sfx.levelUp(); }
+        if(state.level>=10) showAchievement('VETERAN','Reached Level 10');
+        if(state.totalStudyMinutes>=20000) showAchievement('STUDY_MASTER','20,000 Study Minutes!');
+        if(state.level>=50) showAchievement('LEGEND','Reached Level 50!');
+        if(state.level>=100) showAchievement('GOD','Reached Level 100!');
+        nodes[state.activeIdx].status = 'completed';
+        const next = nodes[state.activeIdx].next;
+        if(next!==null) { nodes[next].status='available'; showAchievement('NODE_UNLOCKED',`Sector ${nodes[next].label} accessible`); }
+        else showAchievement('CORE_BREACHED','System core reached!');
+        state.isBreaching=false; state.activeIdx=null;
+
+        // PREMIUM: Trigger boss every 3 completed tasks
+        if(state.totalTasksCompleted % 3 === 0) {
+            setTimeout(triggerBoss, 2000);
+        }
+
+        updateStatsUI();
+        renderDailyChallenges();
+        saveToStorage();
+    }
+
+    document.addEventListener('visibilitychange', ()=>{ if(document.hidden) { saveToStorage(); saveDailyLog(); } });
+    window.addEventListener('resize', ()=>{
+        const dpr = devicePixelRatio||1, oldW=canvas.width/dpr, oldH=canvas.height/dpr;
+        canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr; ctx.scale(dpr,dpr);
+        canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px';
+        nodes.forEach(n=>{ n.x = (n.x/oldW)*innerWidth; n.y = (n.y/oldH)*innerHeight; });
+        weatherCanvas.width = innerWidth; weatherCanvas.height = innerHeight;
+    });
+
+    document.addEventListener('keydown', (e)=>{
+        // ORIGINAL keyboard shortcuts
+        if(e.key==='Escape') { ['overlay','shop-overlay','skills-overlay','trophies-overlay','customize-overlay','leaderboard-overlay','secret-code-overlay'].forEach(id=>document.getElementById(id).style.display='none'); }
+        if(e.key==='m'||e.key==='M') { if(document.getElementById('shop-overlay').style.display==='flex') closeShop(); else openShop(); }
+        if(e.key==='k'||e.key==='K') { if(document.getElementById('skills-overlay').style.display==='flex') closeSkills(); else openSkills(); }
+        // PREMIUM: Secret code shortcut
+        if(e.key==='c'||e.key==='C') { 
+            if(document.getElementById('secret-code-overlay').style.display==='flex') closeSecretCode(); 
+            else openSecretCode(); 
+        }
+        // PREMIUM: Leaderboard shortcut
+        if(e.key==='l'||e.key==='L') {
+            if(document.getElementById('leaderboard-overlay').style.display==='flex') closeLeaderboard();
+            else openLeaderboard();
+        }
+        // PREMIUM: Enter to submit secret code
+        if(e.key==='Enter' && document.getElementById('secret-code-overlay').style.display==='flex') {
+            submitSecretCode();
+        }
+    });
+
+    // ========== PREMIUM: SOUND ENGINE ==========
+    const sfx = (() => {
+        let ctx_audio = null;
+        let enabled = true;
+
+        function getCtx() {
+            if(!ctx_audio) ctx_audio = new (window.AudioContext || window.webkitAudioContext)();
+            return ctx_audio;
+        }
+
+        function tone(freq, type, duration, vol, startTime, fadeOut=true) {
+            try {
+                const ac = getCtx();
+                const osc = ac.createOscillator();
+                const gain = ac.createGain();
+                osc.connect(gain); gain.connect(ac.destination);
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, startTime);
+                gain.gain.setValueAtTime(vol, startTime);
+                if(fadeOut) gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            } catch(e){}
+        }
+
+        function sweepTone(freqStart, freqEnd, type, duration, vol, startTime) {
+            try {
+                const ac = getCtx();
+                const osc = ac.createOscillator();
+                const gain = ac.createGain();
+                osc.connect(gain); gain.connect(ac.destination);
+                osc.type = type;
+                osc.frequency.setValueAtTime(freqStart, startTime);
+                osc.frequency.exponentialRampToValueAtTime(freqEnd, startTime + duration);
+                gain.gain.setValueAtTime(vol, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            } catch(e){}
+        }
+
+        function noise(duration, vol, startTime) {
+            try {
+                const ac = getCtx();
+                const bufSize = ac.sampleRate * duration;
+                const buf = ac.createBuffer(1, bufSize, ac.sampleRate);
+                const data = buf.getChannelData(0);
+                for(let i=0;i<bufSize;i++) data[i] = Math.random()*2-1;
+                const src = ac.createBufferSource();
+                const gain = ac.createGain();
+                const filter = ac.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = 800;
+                src.buffer = buf;
+                src.connect(filter); filter.connect(gain); gain.connect(ac.destination);
+                gain.gain.setValueAtTime(vol, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                src.start(startTime);
+                src.stop(startTime + duration);
+            } catch(e){}
+        }
+
+        return {
+            // Node click
+            click() {
+                if(!enabled) return;
+                try {
+                    const ac = getCtx(); const t = ac.currentTime;
+                    tone(440, 'sine', 0.08, 0.15, t);
+                    tone(660, 'sine', 0.05, 0.1, t+0.04);
+                } catch(e){}
+            },
+
+            // Task started
+            engage() {
+                if(!enabled) return;
+                try {
+                    const ac = getCtx(); const t = ac.currentTime;
+                    sweepTone(200, 600, 'sawtooth', 0.15, 0.3, t);
+                    sweepTone(400, 900, 'square', 0.1, 0.15, t+0.1);
+                    noise(0.08, 0.2, t+0.2);
+                } catch(e){}
+            },
+
+            // Task complete - victory
+            complete() {
+                if(!enabled) return;
+                try {
+                    const ac = getCtx(); const t = ac.currentTime;
+                    // Rising victory arpeggio
+                    [261, 329, 392, 523, 659, 784].forEach((f, i) => {
+                        tone(f, 'sine', 0.25, 0.3, t + i*0.09);
+                    });
+                    // Bass hit
+                    sweepTone(120, 60, 'sine', 0.4, 0.5, t);
+                    noise(0.05, 0.15, t);
+                } catch(e){}
+            },
+
+            // Level up - epic fanfare
+            levelUp() {
+                if(!enabled) return;
+                try {
+                    const ac = getCtx(); const t = ac.currentTime;
+                    [392, 523, 659, 784, 1046].forEach((f, i) => {
+                        tone(f, 'triangle', 0.4, 0.4, t + i*0.12);
+                        tone(f/2, 'sine', 0.3, 0.2, t + i*0.12);
+                    });
+                    noise(0.1, 0.3, t + 0.6);
+                    sweepTone(80, 40, 'sine', 0.6, 0.6, t);
+                } catch(e){}
+            },
+
+            // Achievement pop
+            achievement() {
+                if(!enabled) return;
+                try {
+                    const ac = getCtx(); const t = ac.currentTime;
+                    tone(880, 'sine', 0.12, 0.2, t);
+                    tone(1108, 'sine', 0.12, 0.2, t+0.08);
+                    tone(1318, 'sine', 0.2, 0.25, t+0.16);
+                } catch(e){}
+            },
+
+            // Boss battle start - deep dread
+            bossStart() {
+                if(!enabled) return;
+                try {
+                    const ac = getCtx(); const t = ac.currentTime;
+                    // Deep bass drum
+                    sweepTone(150, 40, 'sine', 0.5, 0.8, t);
+                    sweepTone(150, 40, 'sine', 0.5, 0.8, t+0.6);
+                    sweepTone(150, 40, 'sine', 0.5, 0.8, t+1.0);
+                    // Dark sweep
+                    sweepTone(800, 100, 'sawtooth', 1.2, 0.3, t+0.2);
+                    noise(0.15, 0.4, t);
+                    noise(0.1, 0.3, t+0.6);
+                } catch(e){}
+            },
+
+            // Boss hit
+            bossHit() {
+                if(!enabled) return;
+                try {
+                    const ac = getCtx(); const t = ac.currentTime;
+                    noise(0.06, 0.4, t);
+                    sweepTone(300, 80, 'sawtooth', 0.15, 0.5, t);
+                } catch(e){}
+            },
+
+            // Boss defeat
+            bossDefeat() {
+                if(!enabled) return;
+                try {
+                    const ac = getCtx(); const t = ac.currentTime;
+                    sweepTone(100, 50, 'sine', 0.8, 0.7, t);
+                    noise(0.2, 0.5, t);
+                    [523, 659, 784, 1046, 1318].forEach((f,i)=>{
+                        tone(f, 'triangle', 0.3, 0.35, t+0.5+i*0.1);
+                    });
+                } catch(e){}
+            },
+
+            // Power drop collect
+            powerDrop() {
+                if(!enabled) return;
+                try {
+                    const ac = getCtx(); const t = ac.currentTime;
+                    sweepTone(400, 1200, 'sine', 0.2, 0.3, t);
+                    tone(1600, 'sine', 0.1, 0.2, t+0.15);
+                } catch(e){}
+            },
+
+            // Secret code accepted
+            secretCode() {
+                if(!enabled) return;
+                try {
+                    const ac = getCtx(); const t = ac.currentTime;
+                    [200,400,600,800,1000,1200].forEach((f,i)=>{
+                        tone(f, 'square', 0.08, 0.2, t+i*0.05);
+                    });
+                } catch(e){}
+            },
+
+            // MK-style synth boom underneath voice
+            mkFight() {
+                if(!enabled) return;
+                try {
+                    const ac = getCtx(); const t = ac.currentTime;
+                    // Bass impact on "ROUND"
+                    sweepTone(80, 30, 'sine', 0.5, 1.0, t + 0.05);
+                    noise(0.12, 0.6, t + 0.05);
+                    // Stab on "1"
+                    tone(200, 'square', 0.2, 0.5, t + 0.65);
+                    noise(0.07, 0.4, t + 0.65);
+                    // Big roar on "FIGHT"
+                    sweepTone(100, 400, 'sawtooth', 0.6, 0.9, t + 1.65);
+                    sweepTone(200, 800, 'square', 0.4, 0.5, t + 1.65);
+                    noise(0.2, 0.8, t + 1.65);
+                    // Final impact boom
+                    sweepTone(300, 20, 'sine', 0.8, 1.2, t + 2.1);
+                    noise(0.15, 0.6, t + 2.1);
+                } catch(e){}
+            },
+
+            // Combo increment
+            combo(n) {
+                if(!enabled) return;
+                try {
+                    const ac = getCtx(); const t = ac.currentTime;
+                    const freq = 300 + n*80;
+                    tone(freq, 'square', 0.08, 0.2, t);
+                    tone(freq*1.5, 'sine', 0.05, 0.06, t+0.05);
+                } catch(e){}
+            },
+
+            // Motivating alarm after task complete
+            alarm() {
+                if(!enabled) return;
+                try {
+                    const ac = getCtx(); const t = ac.currentTime;
+                    // Pulsing motivational beeps — like a champion alarm
+                    const pattern = [0, 0.22, 0.44, 0.66, 0.88, 1.2, 1.42, 1.64, 2.0, 2.15, 2.3, 2.5];
+                    pattern.forEach((time, i) => {
+                        const freq = i >= 8 ? 1200 : 880;
+                        tone(freq, 'sine', 0.15, i >= 8 ? 0.5 : 0.35, t + time);
+                        tone(freq * 1.5, 'triangle', 0.08, 0.2, t + time + 0.02);
+                    });
+                    // Final triumphant chord
+                    [523, 659, 784, 1046].forEach((f, i) => {
+                        tone(f, 'sine', 0.6, 0.4, t + 2.7 + i*0.05);
+                    });
+                    sweepTone(200, 80, 'sine', 0.5, 0.6, t + 2.7);
+                } catch(e){}
+            },
+
+            toggle() { enabled = !enabled; return enabled; }
+        };
+    })();
+
+    // Sound toggle button (bottom left)
+    const soundToggleBtn = document.createElement('div');
+    soundToggleBtn.className = 'control-btn';
+    soundToggleBtn.style.cssText = 'bottom:25px;left:20px;';
+    soundToggleBtn.innerText = '[ 🔊 SFX ]';
+    soundToggleBtn.onclick = () => {
+        const on = sfx.toggle();
+        soundToggleBtn.innerText = on ? '[ 🔊 SFX ]' : '[ 🔇 SFX ]';
+        if(on) sfx.click();
+    };
+    document.body.appendChild(soundToggleBtn);
+
+    // Unlock audio context on first interaction
+    document.addEventListener('click', () => {
+        try { new (window.AudioContext||window.webkitAudioContext)().resume(); } catch(e){}
+    }, { once: true });
+
+    // ========== PROGRESS PAGE ==========
+    function openProgress() {
+        document.getElementById('progress-overlay').style.display = 'flex';
+        renderProgressPage();
+    }
+    function closeProgress() {
+        document.getElementById('progress-overlay').style.display = 'none';
+    }
+
+    function renderProgressPage() {
+        const today = new Date().toDateString();
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+        // Top cards
+        document.getElementById('pg-today').innerText = state.dailyLog[today] || 0;
+        document.getElementById('pg-yesterday').innerText = state.dailyLog[yesterday] || 0;
+        document.getElementById('pg-total').innerText = state.totalStudyMinutes;
+        document.getElementById('pg-tasks').innerText = state.totalTasksCompleted;
+        document.getElementById('pg-level').innerText = state.level;
+        document.getElementById('pg-streak').innerText = state.streak;
+
+        // Last 7 days bars
+        const histEl = document.getElementById('pg-history-bars');
+        histEl.innerHTML = '';
+        const days = [];
+        for(let i = 6; i >= 0; i--) {
+            const d = new Date(Date.now() - i * 86400000);
+            days.push({ key: d.toDateString(), label: i === 0 ? 'TODAY' : i === 1 ? 'YEST.' : d.toLocaleDateString('en',{weekday:'short'}).toUpperCase() });
+        }
+        const maxMins = Math.max(1, ...days.map(d => state.dailyLog[d.key] || 0));
+        days.forEach(d => {
+            const mins = state.dailyLog[d.key] || 0;
+            const pct = Math.round((mins / maxMins) * 100);
+            const row = document.createElement('div');
+            row.className = 'day-row';
+            row.innerHTML = `
+                <div class="day-label">${d.label}</div>
+                <div class="day-bar-wrap">
+                    <div class="day-bar-fill" style="width:0%" data-pct="${pct}"></div>
+                </div>
+                <div class="day-val">${mins}<span style="font-size:8px;opacity:0.6"> MIN</span></div>`;
+            histEl.appendChild(row);
+        });
+        // Animate bars after render
+        setTimeout(() => {
+            histEl.querySelectorAll('.day-bar-fill').forEach(el => {
+                el.style.width = el.dataset.pct + '%';
+            });
+        }, 50);
+
+        // Level evolution timeline
+        const tlEl = document.getElementById('pg-timeline');
+        tlEl.innerHTML = '';
+        if(!state.levelHistory || state.levelHistory.length === 0) {
+            tlEl.innerHTML = '<div style="font-size:11px;color:#555;letter-spacing:2px;text-align:center;padding:10px;">NO LEVEL HISTORY YET</div>';
+        } else {
+            // Show last 10 level-ups
+            const history = [...state.levelHistory].reverse().slice(0, 10);
+            history.forEach(h => {
+                const row = document.createElement('div');
+                row.className = 'timeline-row';
+                const dotClass = h.level % 10 === 0 ? 'gold' : h.level % 5 === 0 ? 'green' : '';
+                row.innerHTML = `
+                    <div class="timeline-dot ${dotClass}"></div>
+                    <div class="timeline-text">▲ REACHED LEVEL ${h.level} ${h.level%10===0?'👑':h.level%5===0?'💎':''}<br><span style="font-size:10px;opacity:0.5">via: ${h.task||'UNKNOWN'}</span></div>
+                    <div class="timeline-date">${h.date||''}</div>`;
+                tlEl.appendChild(row);
+            });
+        }
+
+        // Always add current status at top
+        const now = document.createElement('div');
+        now.className = 'timeline-row';
+        now.innerHTML = `<div class="timeline-dot gold"></div><div class="timeline-text" style="color:var(--gold)">◉ NOW — LEVEL ${state.level}</div><div class="timeline-date">TODAY</div>`;
+        tlEl.insertBefore(now, tlEl.firstChild);
+    }
+
+
+    // ============================================================
+    // FEATURE: TIMER MODES + DIFFICULTY + ICON PICKER
+    // ============================================================
+    let selectedTimerMode = 'countdown';
+    let selectedDiff = 'normal';
+    let selectedIcon = '💠';
+    const diffMultipliers = { easy: 0.7, normal: 1.0, hard: 1.5, legendary: 2.5 };
+    const nodeIcons = ['💠','⚡','🔥','🎯','📚','🧠','💡','🔮','🌙','⭐','🛡️','⚔️','🏆','🎮','🔬','🎨'];
+
+    function selectTimerMode(mode, el) {
+        selectedTimerMode = mode;
+        document.querySelectorAll('.timer-mode-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        const wrap = document.getElementById('time-input-wrap');
+        if(mode === 'pomodoro25') {
+            wrap.innerHTML = '<div style="font-size:13px;color:var(--danger);letter-spacing:3px;padding:10px;">🍅 25 MIN AUTO-SET</div>';
+        } else if(mode === 'pomodoro50') {
+            wrap.innerHTML = '<div style="font-size:13px;color:var(--warning);letter-spacing:3px;padding:10px;">🍅 50 MIN AUTO-SET</div>';
+        } else if(mode === 'stopwatch') {
+            wrap.innerHTML = '<div style="font-size:13px;color:var(--success);letter-spacing:3px;padding:10px;">⏳ NO TIME LIMIT</div>';
+        } else {
+            wrap.innerHTML = '<input type="number" id="targetTime" placeholder="MINUTES" min="1" max="300" autocomplete="off">';
+        }
+    }
+
+    function selectDiff(d, el) {
+        selectedDiff = d;
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    function renderIconPicker() {
+        const picker = document.getElementById('icon-picker');
+        if(!picker) return;
+        picker.innerHTML = '';
+        nodeIcons.forEach(ic => {
+            const el = document.createElement('div');
+            el.className = 'icon-pick' + (ic === selectedIcon ? ' selected' : '');
+            el.innerText = ic;
+            el.onclick = () => { selectedIcon = ic; renderIconPicker(); try{sfx.click();}catch(e){} };
+            picker.appendChild(el);
+        });
+    }
+
+    // Override closeOverlay to reset UI
+    const _origCloseOverlay = closeOverlay;
+    // patch engage to use mode/diff/icon
+    const _origEngage = engage;
+
+    // ============================================================
+    // FEATURE: FAIL SYSTEM (abandon task button)
+    // ============================================================
+    function abandonTask() {
+        if(!state.isBreaching) return;
+        state.isBreaching = false;
+        const idx = state.activeIdx;
+        state.activeIdx = null;
+        state.startTime = null;
+        // Penalty: lose streak
+        if(state.streak > 0) state.streak = Math.max(0, state.streak - 1);
+        document.getElementById('fail-penalty-text').innerText = `STREAK RESET TO ${state.streak} DAYS`;
+        document.getElementById('fail-overlay').style.display = 'flex';
+        try { sfx.bossHit(); } catch(e){}
+        saveToStorage(); updateStatsUI();
+    }
+    function closeFail() {
+        document.getElementById('fail-overlay').style.display = 'none';
+    }
+
+    // ============================================================
+    // FEATURE: RANDOM EVENTS during breach
+    // ============================================================
+    const randomEvents = [
+        { icon:'⚡', title:'POWER SURGE', desc:'2x XP for this task!', action: ()=>{ state._eventXPBoost=2; } },
+        { icon:'💎', title:'CREDIT DROP', desc:'+300 CREDITS NOW!', action: ()=>{ state.credits+=300; updateStatsUI(); } },
+        { icon:'🔮', title:'SKILL BOOST', desc:'+1 SKILL POINT GRANTED', action: ()=>{ state.skillPoints++; updateStatsUI(); } },
+        { icon:'🌙', title:'NIGHT MODE', desc:'Streak protected this session', action: ()=>{ state._streakProtected=true; } },
+        { icon:'📈', title:'XP MULTIPLIER', desc:'Node difficulty +0.5 bonus!', action: ()=>{ if(state.activeIdx!==null&&nodes[state.activeIdx]) nodes[state.activeIdx].difficulty+=0.5; } },
+        { icon:'🎁', title:'MYSTERY BOX', desc:'+500 CREDITS!', action: ()=>{ state.credits+=500; updateStatsUI(); } },
+    ];
+    let eventFired = false;
+
+    function maybeFireRandomEvent() {
+        if(!state.isBreaching || eventFired) return;
+        const elapsed = (Date.now() - state.startTime)/1000;
+        const progress = elapsed / state.duration;
+        // Fire between 30-70% of task
+        if(progress > 0.3 && progress < 0.7 && Math.random() < 0.008) {
+            eventFired = true;
+            const ev = randomEvents[Math.floor(Math.random()*randomEvents.length)];
+            document.getElementById('event-icon').innerText = ev.icon;
+            document.getElementById('event-title').innerText = ev.title;
+            document.getElementById('event-desc').innerText = ev.desc;
+            window._pendingEvent = ev;
+            document.getElementById('random-event-popup').classList.add('show');
+            try { sfx.achievement(); } catch(e){}
+        }
+    }
+    function acceptEvent() {
+        document.getElementById('random-event-popup').classList.remove('show');
+        if(window._pendingEvent) { window._pendingEvent.action(); window._pendingEvent = null; }
+    }
+
+    // ============================================================
+    // FEATURE: HEATMAP (render in progress page)
+    // ============================================================
+    function renderHeatmap() {
+        const canvas = document.getElementById('heatmap-canvas');
+        if(!canvas) return;
+        const weeks = 26, days = 7;
+        const cellSize = 14, gap = 3;
+        const w = weeks * (cellSize+gap) + 30;
+        const h = days * (cellSize+gap) + 30;
+        canvas.width = w; canvas.height = h;
+        const ctx2 = canvas.getContext('2d');
+        ctx2.clearRect(0,0,w,h);
+
+        const maxVal = Math.max(1, ...Object.values(state.dailyLog || {}));
+        const today = new Date();
+
+        // Day labels
+        ['S','M','T','W','T','F','S'].forEach((d,i) => {
+            ctx2.fillStyle = 'rgba(162,228,243,0.4)';
+            ctx2.font = '9px Courier New';
+            ctx2.fillText(d, 0, 28 + i*(cellSize+gap));
+        });
+
+        for(let w2=0; w2<weeks; w2++) {
+            for(let d2=0; d2<days; d2++) {
+                const daysAgo = (weeks-1-w2)*7 + (days-1-d2);
+                const date = new Date(today);
+                date.setDate(date.getDate() - daysAgo);
+                const key = date.toDateString();
+                const val = state.dailyLog[key] || 0;
+                const intensity = val / maxVal;
+                const x = 20 + w2*(cellSize+gap);
+                const y = 16 + d2*(cellSize+gap);
+                const alpha = val === 0 ? 0.08 : 0.2 + intensity*0.8;
+                ctx2.fillStyle = val === 0 ? `rgba(162,228,243,${alpha})` : `rgba(162,228,243,${alpha})`;
+                if(intensity > 0.7) ctx2.fillStyle = `rgba(255,215,0,${alpha})`;
+                if(intensity > 0.9) ctx2.fillStyle = `rgba(255,215,0,0.95)`;
+                ctx2.beginPath();
+                ctx2.roundRect(x,y,cellSize,cellSize,2);
+                ctx2.fill();
+            }
+        }
+    }
+
+    // ============================================================
+    // FEATURE: BEST HOUR + PIE CHART
+    // ============================================================
+    function renderBestHour() {
+        const wrap = document.querySelector('.best-hour-wrap');
+        if(!wrap) return;
+        const hourLog = state.hourLog || {};
+        const hours = Array.from({length:24},(_,i)=>i);
+        const vals = hours.map(h => hourLog[h] || 0);
+        const maxVal = Math.max(1, ...vals);
+        const peakHour = vals.indexOf(Math.max(...vals));
+
+        const titleEl = wrap.querySelector('.prog-section-title') || wrap;
+        const barsWrap = wrap.querySelector('.hour-bars');
+        if(!barsWrap) return;
+        barsWrap.innerHTML = '';
+        hours.forEach((h,i) => {
+            const col = document.createElement('div');
+            col.className = 'hour-bar-col';
+            const pct = Math.max(4, (vals[i]/maxVal)*56);
+            col.innerHTML = `<div class="hour-bar${i===peakHour?' peak':''}" style="height:${pct}px"></div>${h%6===0?`<div class="hour-label">${h}h</div>`:'<div class="hour-label"></div>'}`;
+            barsWrap.appendChild(col);
+        });
+
+        const peakEl = wrap.querySelector('#peak-hour-label');
+        if(peakEl) peakEl.innerText = maxVal > 0 ? `PEAK: ${peakHour}:00 — ${vals[peakHour]} MIN` : 'NO DATA YET';
+    }
+
+    function renderPieChart() {
+        const canvas = document.getElementById('pie-canvas');
+        const legend = document.getElementById('pie-legend');
+        if(!canvas || !legend) return;
+        const subjects = state.subjectLog || {};
+        const entries = Object.entries(subjects).sort((a,b)=>b[1]-a[1]).slice(0,6);
+        if(entries.length === 0) { canvas.style.display='none'; legend.innerHTML='<div style="font-size:11px;color:#555;letter-spacing:2px;">NO DATA YET</div>'; return; }
+        canvas.style.display = 'block';
+        const colors = ['#A2E4F3','#FFD700','#00FF88','#FF3366','#B44CFF','#FFB320'];
+        const total = entries.reduce((s,[,v])=>s+v,0);
+        const size = 120; canvas.width=size; canvas.height=size;
+        const ctx2 = canvas.getContext('2d');
+        let angle = -Math.PI/2;
+        entries.forEach(([name,val],i) => {
+            const slice = (val/total) * Math.PI*2;
+            ctx2.beginPath();
+            ctx2.moveTo(size/2,size/2);
+            ctx2.arc(size/2,size/2,size/2-4,angle,angle+slice);
+            ctx2.fillStyle = colors[i];
+            ctx2.fill();
+            ctx2.strokeStyle='#000'; ctx2.lineWidth=2; ctx2.stroke();
+            angle += slice;
+        });
+        legend.innerHTML = entries.map(([name,val],i)=>`
+            <div class="pie-legend-item">
+                <div class="pie-dot" style="background:${colors[i]}"></div>
+                <div>${name}: <span style="color:var(--gold)">${val}min</span></div>
+            </div>`).join('');
+    }
+
+    // Track subject time
+    function trackSubject(name, minutes) {
+        if(!state.subjectLog) state.subjectLog = {};
+        const key = name.substring(0,12).toUpperCase();
+        state.subjectLog[key] = (state.subjectLog[key] || 0) + minutes;
+    }
+
+    // Track hour of day
+    function trackHour(minutes) {
+        if(!state.hourLog) state.hourLog = {};
+        const h = new Date().getHours();
+        state.hourLog[h] = (state.hourLog[h] || 0) + minutes;
+    }
+
+    // ============================================================
+    // FEATURE: PROFILE CARD
+    // ============================================================
+    function openProfile() {
+        document.getElementById('profile-overlay').style.display = 'flex';
+        renderProfileCard();
+    }
+    function closeProfile() { document.getElementById('profile-overlay').style.display = 'none'; }
+
+    function renderProfileCard() {
+        const canvas = document.getElementById('profile-card-canvas');
+        const ctx2 = canvas.getContext('2d');
+        const W=600, H=340;
+        ctx2.clearRect(0,0,W,H);
+
+        // Background
+        const bg = ctx2.createLinearGradient(0,0,W,H);
+        bg.addColorStop(0,'#050510'); bg.addColorStop(1,'#0a0015');
+        ctx2.fillStyle = bg; ctx2.fillRect(0,0,W,H);
+
+        // Grid lines
+        ctx2.strokeStyle='rgba(162,228,243,0.04)'; ctx2.lineWidth=1;
+        for(let x=0;x<W;x+=30){ctx2.beginPath();ctx2.moveTo(x,0);ctx2.lineTo(x,H);ctx2.stroke();}
+        for(let y=0;y<H;y+=30){ctx2.beginPath();ctx2.moveTo(0,y);ctx2.lineTo(W,y);ctx2.stroke();}
+
+        // Border glow
+        ctx2.strokeStyle='rgba(162,228,243,0.5)'; ctx2.lineWidth=2;
+        ctx2.strokeRect(1,1,W-2,H-2);
+        ctx2.strokeStyle='rgba(162,228,243,0.15)'; ctx2.lineWidth=1;
+        ctx2.strokeRect(6,6,W-12,H-12);
+
+        // Avatar circle
+        ctx2.beginPath(); ctx2.arc(80,H/2,55,0,Math.PI*2);
+        ctx2.fillStyle='rgba(162,228,243,0.08)'; ctx2.fill();
+        ctx2.strokeStyle='rgba(162,228,243,0.6)'; ctx2.lineWidth=2; ctx2.stroke();
+        ctx2.font='52px serif'; ctx2.textAlign='center'; ctx2.textBaseline='middle';
+        ctx2.fillText(state.customization.avatar||'👤', 80, H/2);
+
+        // Name
+        ctx2.textAlign='left'; ctx2.textBaseline='top';
+        ctx2.fillStyle='#ffffff'; ctx2.font='bold 28px Courier New';
+        ctx2.shadowColor='rgba(162,228,243,0.8)'; ctx2.shadowBlur=15;
+        ctx2.fillText(state.playerName||'AGENT', 155, 55);
+        ctx2.shadowBlur=0;
+
+        // Rank
+        const rankIdx = Math.min(Math.floor((state.level-1)/7),14);
+        const rankNames = ["SHADOW","INITIATE","OPERATIVE","BREACHER","ENFORCER","VANGUARD","PHANTOM","ASSASSIN","SPECTRE","ELITE_AGENT","WARLORD","OVERLORD","ARCHITECT","SYSTEM_GHOST","GOD_MODE"];
+        ctx2.fillStyle='rgba(162,228,243,0.6)'; ctx2.font='13px Courier New';
+        ctx2.fillText(`LVL ${state.level}  //  ${rankNames[rankIdx]}`, 155, 92);
+
+        // Stats grid
+        const stats = [
+            ['📚 STUDY TIME', `${state.totalStudyMinutes} MIN`],
+            ['✅ TASKS DONE', `${state.totalTasksCompleted}`],
+            ['🔥 STREAK', `${state.streak} DAYS`],
+            ['💠 CREDITS', `${state.credits}`],
+            ['⭐ COMBO BEST', `x${state.comboBest||0}`],
+            ['🏆 TROPHIES', `${state.achievements.length}`],
+        ];
+        stats.forEach(([label,val],i) => {
+            const col = i<3?0:1, row = i%3;
+            const x = 155 + col*210, y = 135 + row*52;
+            ctx2.fillStyle='rgba(162,228,243,0.08)';
+            ctx2.beginPath(); ctx2.roundRect(x,y,190,42,6); ctx2.fill();
+            ctx2.strokeStyle='rgba(162,228,243,0.15)'; ctx2.lineWidth=1;
+            ctx2.beginPath(); ctx2.roundRect(x,y,190,42,6); ctx2.stroke();
+            ctx2.fillStyle='rgba(162,228,243,0.5)'; ctx2.font='9px Courier New';
+            ctx2.fillText(label, x+10, y+8);
+            ctx2.fillStyle='#ffffff'; ctx2.font='bold 16px Courier New';
+            ctx2.shadowColor='rgba(162,228,243,0.5)'; ctx2.shadowBlur=8;
+            ctx2.fillText(val, x+10, y+22);
+            ctx2.shadowBlur=0;
+        });
+
+        // XP bar
+        const req = Math.floor(100 * Math.pow(1.2, state.level-1));
+        const xpPct = Math.min(state.exp/req, 1);
+        ctx2.fillStyle='rgba(162,228,243,0.1)'; ctx2.beginPath(); ctx2.roundRect(155,300,410,12,6); ctx2.fill();
+        ctx2.strokeStyle='rgba(162,228,243,0.3)'; ctx2.lineWidth=1; ctx2.beginPath(); ctx2.roundRect(155,300,410,12,6); ctx2.stroke();
+        const xpGrad = ctx2.createLinearGradient(155,0,565,0);
+        xpGrad.addColorStop(0,'rgba(162,228,243,0.8)'); xpGrad.addColorStop(1,'#ffffff');
+        ctx2.fillStyle=xpGrad;
+        ctx2.beginPath(); ctx2.roundRect(155,300,410*xpPct,12,6); ctx2.fill();
+        ctx2.fillStyle='rgba(162,228,243,0.5)'; ctx2.font='9px Courier New'; ctx2.textAlign='right';
+        ctx2.fillText(`${Math.floor(state.exp)} / ${req} XP`, 565, 322);
+
+        // Watermark
+        ctx2.textAlign='right'; ctx2.fillStyle='rgba(162,228,243,0.2)'; ctx2.font='10px Courier New';
+        ctx2.fillText('TROMAVOID // NEXUS_CORE', W-12, H-12);
+    }
+
+    function downloadProfileCard() {
+        renderProfileCard();
+        const canvas = document.getElementById('profile-card-canvas');
+        const a = document.createElement('a');
+        a.download = `${state.playerName||'agent'}_profile.png`;
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+        try { sfx.complete(); } catch(e){}
+    }
+
+    // ============================================================
+    // FEATURE: STUDY ROOMS
+    // ============================================================
+    function generateRoomCode() {
+        const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let code='';
+        for(let i=0;i<6;i++) code+=chars[Math.floor(Math.random()*chars.length)];
+        return code;
+    }
+
+    function openRooms() {
+        document.getElementById('rooms-overlay').style.display='flex';
+        if(!state.myRoomCode) state.myRoomCode = generateRoomCode();
+        document.getElementById('my-room-code').innerText = state.myRoomCode;
+        renderRoomMembers();
+        saveToStorage();
+    }
+    function closeRooms() { document.getElementById('rooms-overlay').style.display='none'; }
+
+    function copyRoomCode() {
+        navigator.clipboard.writeText(state.myRoomCode||'').catch(()=>{});
+        const el=document.getElementById('my-room-code');
+        const orig=el.innerText; el.innerText='COPIED!';
+        setTimeout(()=>el.innerText=orig,1500);
+        try{sfx.click();}catch(e){}
+    }
+
+    function joinRoom() {
+        const code = document.getElementById('join-room-input').value.toUpperCase().trim();
+        if(!code||code.length!==6) return;
+        if(!state.joinedRooms) state.joinedRooms = [];
+        if(!state.joinedRooms.includes(code)) state.joinedRooms.push(code);
+        renderRoomMembers();
+        try{sfx.achievement();}catch(e){}
+    }
+
+    // Simulated room members for demo
+    const simRoomPlayers = [
+        {name:'NEXUS_QUEEN',avatar:'👑',xp:8500,status:'STUDYING: Math'},
+        {name:'GHOST_X',avatar:'👾',xp:6200,status:'IDLE'},
+        {name:'CIPHER',avatar:'🔮',xp:4100,status:'STUDYING: Physics'},
+    ];
+
+    function renderRoomMembers() {
+        const list=document.getElementById('room-members-list');
+        if(!list)return;
+        list.innerHTML='';
+        // Self
+        const selfRow=document.createElement('div'); selfRow.className='room-member-row';
+        selfRow.innerHTML=`<div class="room-member-avatar">${state.customization.avatar||'👤'}</div><div class="room-member-info"><div class="room-member-name">${state.playerName||'YOU'} <span style="color:var(--gold);font-size:10px;">(YOU)</span></div><div class="room-member-status">${state.isBreaching?'STUDYING: '+state.taskName:'IDLE'}</div></div><div class="room-member-xp">${state.totalStudyMinutes}min</div><div class="room-live-dot"></div>`;
+        list.appendChild(selfRow);
+        // Simulated members if joined or has own code
+        simRoomPlayers.forEach(p=>{
+            const row=document.createElement('div'); row.className='room-member-row';
+            row.innerHTML=`<div class="room-member-avatar">${p.avatar}</div><div class="room-member-info"><div class="room-member-name">${p.name}</div><div class="room-member-status">${p.status}</div></div><div class="room-member-xp">${p.xp}min</div><div class="room-live-dot" style="background:${p.status==='IDLE'?'#555':'var(--success)'}"></div>`;
+            list.appendChild(row);
+        });
+    }
+
+    // ============================================================
+    // FEATURE: NOTIFICATIONS
+    // ============================================================
+    function requestNotifications() {
+        if(!('Notification' in window) || Notification.permission==='granted' || Notification.permission==='denied') return;
+        document.getElementById('notif-banner').style.display='flex';
+    }
+
+    function enableNotifications() {
+        document.getElementById('notif-banner').style.display='none';
+        Notification.requestPermission().then(perm=>{
+            if(perm==='granted') {
+                new Notification('NEXUS SYSTEM ONLINE', {body:'Study reminders are now active, Agent '+state.playerName,icon:'https://cdn-icons-png.freepik.com/512/94/94112.png'});
+                scheduleReminders();
+            }
+        });
+    }
+
+    function scheduleReminders() {
+        // Remind every 4 hours if not studying
+        setInterval(()=>{
+            if(!state.isBreaching && Notification.permission==='granted') {
+                const h=new Date().getHours();
+                if(h>=8&&h<=22) {
+                    new Notification('NEXUS REMINDER', {body:`Agent ${state.playerName} — No mission detected. Time to study!`});
+                }
+            }
+        }, 4*60*60*1000);
+    }
+
+    // ============================================================
+    // FEATURE: WEEKLY REPORT
+    // ============================================================
+    function openWeekly() {
+        document.getElementById('weekly-overlay').style.display='flex';
+        renderWeeklyReport();
+    }
+    function closeWeekly() { document.getElementById('weekly-overlay').style.display='none'; }
+
+    function renderWeeklyReport() {
+        const content = document.getElementById('weekly-content');
+        if(!content) return;
+        const days=[];
+        let weekTotal=0, bestDay='', bestDayMins=0;
+        for(let i=6;i>=0;i--){
+            const d=new Date(Date.now()-i*86400000);
+            const key=d.toDateString();
+            const mins=state.dailyLog[key]||0;
+            weekTotal+=mins;
+            if(mins>bestDayMins){bestDayMins=mins;bestDay=d.toLocaleDateString('en',{weekday:'long'});}
+            days.push({label:d.toLocaleDateString('en',{weekday:'short'}),mins});
+        }
+        const avg=Math.round(weekTotal/7);
+        const grade=weekTotal>=300?'S':weekTotal>=200?'A':weekTotal>=120?'B':weekTotal>=60?'C':'D';
+        const gradeColor=grade==='S'?'var(--gold)':grade==='A'?'var(--success)':grade==='B'?'var(--ice)':grade==='C'?'var(--warning)':'var(--danger)';
+        const gradeMsg={S:'LEGENDARY PERFORMANCE',A:'EXCELLENT WORK',B:'SOLID PROGRESS',C:'KEEP PUSHING',D:'TIME TO GRIND'}[grade];
+
+        content.innerHTML=`
+        <div class="weekly-card" style="text-align:center;">
+            <div class="weekly-card-title">WEEKLY PERFORMANCE GRADE</div>
+            <div class="weekly-grade" style="color:${gradeColor}">${grade}</div>
+            <div style="font-size:13px;color:${gradeColor};letter-spacing:4px;margin-top:10px;">${gradeMsg}</div>
+        </div>
+        <div class="weekly-card">
+            <div class="weekly-card-title">THIS WEEK OVERVIEW</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div><div class="weekly-stat-big" style="color:var(--ice)">${weekTotal}</div><div class="weekly-stat-label">TOTAL MINUTES</div></div>
+                <div><div class="weekly-stat-big" style="color:var(--gold)">${avg}</div><div class="weekly-stat-label">DAILY AVERAGE</div></div>
+            </div>
+            ${bestDay?`<div class="weekly-highlight">🏆 BEST DAY: ${bestDay.toUpperCase()} — ${bestDayMins} MIN</div>`:''}
+        </div>
+        <div class="weekly-card">
+            <div class="weekly-card-title">DAY BY DAY BREAKDOWN</div>
+            ${days.map(d=>`
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <div style="font-size:10px;color:var(--ice);opacity:0.6;width:35px;">${d.label}</div>
+                <div style="flex:1;height:14px;background:rgba(162,228,243,0.07);border-radius:7px;overflow:hidden;">
+                    <div style="height:100%;width:${weekTotal>0?Math.round(d.mins/Math.max(bestDayMins,1)*100):0}%;background:linear-gradient(90deg,var(--ice),#fff);border-radius:7px;transition:width 0.8s ease;"></div>
+                </div>
+                <div style="font-size:11px;font-weight:bold;color:var(--gold);width:50px;text-align:right;">${d.mins} <span style="font-size:8px;opacity:0.6">MIN</span></div>
+            </div>`).join('')}
+        </div>
+        <div class="weekly-card">
+            <div class="weekly-card-title">AGENT SUMMARY</div>
+            <div style="font-size:12px;color:var(--ice);letter-spacing:2px;line-height:2;">
+                LVL ${state.level} // ${state.streak} DAY STREAK<br>
+                ${state.totalTasksCompleted} TOTAL TASKS COMPLETED<br>
+                ${state.credits} CREDITS IN VAULT<br>
+                ${state.achievements.length} ACHIEVEMENTS UNLOCKED
+            </div>
+        </div>`;
+    }
+
+    // ============================================================
+    // PATCH: upgrade engage() to use mode/diff/icon + track subjects/hours
+    // ============================================================
+    const _baseEngage = engage;
+    engage = async function() {
+        // Render icon picker when overlay opens
+        renderIconPicker();
+
+        const name = document.getElementById('targetName')?.value || '';
+        let time;
+        if(selectedTimerMode==='pomodoro25') time=25;
+        else if(selectedTimerMode==='pomodoro50') time=50;
+        else if(selectedTimerMode==='stopwatch') time=999;
+        else time=parseInt(document.getElementById('targetTime')?.value)||0;
+
+        if(!name||time<1) return;
+        state.taskName = name.toUpperCase();
+        state.duration = time*60;
+        state._diffMult = diffMultipliers[selectedDiff]||1.0;
+        state._selectedDiff = selectedDiff;
+        state._taskIcon = selectedIcon;
+        eventFired = false;
+
+        document.getElementById('overlay').style.display='none';
+        await playVSAnimation();
+        state.startTime = Date.now(); state.isBreaching = true;
+        if(nodes[state.activeIdx]) {
+            nodes[state.activeIdx].label = selectedIcon + ' ' + name.toUpperCase().substring(0,6);
+        }
+        saveToStorage();
+    };
+
+    // ============================================================
+    // PATCH: completeNode to use diff multiplier + track subject/hour
+    // ============================================================
+    const _origCompleteNode = completeNode;
+    completeNode = function() {
+        const baseMin = Math.floor(state.duration/60);
+        const diffMult = state._diffMult || 1.0;
+        const eventMult = state._eventXPBoost || 1;
+        state._eventXPBoost = 1; state._diffMult = 1.0;
+
+        // Track subject and hour
+        trackSubject(state.taskName, baseMin);
+        trackHour(baseMin);
+
+        const rewardXP = Math.floor(baseMin * calculateXPMultiplier() * diffMult * eventMult * (nodes[state.activeIdx]?.difficulty||1));
+        state.totalStudyMinutes += baseMin;
+        state.exp += rewardXP;
+        state.credits += rewardXP*2;
+        state.totalTasksCompleted++;
+
+        addMinutesToDailyLog(baseMin); // Dedicated persistent daily log
+
+        spawnXPRain(rewardXP, innerWidth/2, innerHeight/2);
+        incrementCombo();
+        sfx.complete();
+        setTimeout(()=>sfx.alarm(), 600);
+
+        let leveled=false;
+        while(state.exp>=getRequiredXP(state.level)){
+            state.exp-=getRequiredXP(state.level); state.level++; state.skillPoints++; leveled=true;
+            state.levelHistory.push({level:state.level,date:new Date().toLocaleDateString(),task:state.taskName});
+        }
+        if(leveled){showAchievement('LEVEL_UP',`Advanced to Level ${state.level}`);sfx.levelUp();}
+        if(state.level>=10)showAchievement('VETERAN','Reached Level 10');
+        if(state.totalStudyMinutes>=20000)showAchievement('STUDY_MASTER','20,000 Study Minutes!');
+        if(state.level>=50)showAchievement('LEGEND','Reached Level 50!');
+        if(state.level>=100)showAchievement('GOD','Reached Level 100!');
+
+        nodes[state.activeIdx].status='completed';
+        nodes[state.activeIdx].edgeProgress=1;
+        const next=nodes[state.activeIdx].next;
+        if(next!==null){nodes[next].status='available';showAchievement('NODE_UNLOCKED',`Sector ${nodes[next].label} accessible`);}
+        else showAchievement('CORE_BREACHED','System core reached!');
+        state.isBreaching=false; state.activeIdx=null;
+
+        if(state.totalTasksCompleted%3===0) setTimeout(triggerBoss,2000);
+        updateStatsUI(); renderDailyChallenges(); saveToStorage();
+    };
+
+    // ============================================================
+    // PATCH: add abandon button during breach + fire random events
+    // ============================================================
+    const _origDraw = draw;
+    // Inject abandon button after breach starts
+    let abandonBtn = null;
+    function ensureAbandonBtn() {
+        if(!abandonBtn) {
+            abandonBtn = document.createElement('div');
+            abandonBtn.style.cssText='position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:20;padding:8px 24px;border:1.5px solid rgba(255,51,102,0.5);color:var(--danger);background:rgba(0,0,0,0.8);cursor:pointer;border-radius:5px;font-size:10px;font-weight:bold;letter-spacing:2px;font-family:Courier New,monospace;display:none;backdrop-filter:blur(5px);';
+            abandonBtn.innerText='[ ✕ ABANDON MISSION ]';
+            abandonBtn.onclick=abandonTask;
+            document.body.appendChild(abandonBtn);
+        }
+        if(state.isBreaching) abandonBtn.style.display='block';
+        else abandonBtn.style.display='none';
+    }
+
+    // Patch draw loop to call random events + update abandon btn
+    const _realDraw = draw;
+    setInterval(()=>{
+        if(state.isBreaching) maybeFireRandomEvent();
+    }, 500);
+
+    // ============================================================
+    // PATCH: renderProgressPage to include heatmap, pie, best hour
+    // ============================================================
+    const _origRenderProgress = renderProgressPage;
+    renderProgressPage = function() {
+        _origRenderProgress();
+        // Inject heatmap section
+        const overlay = document.getElementById('progress-overlay');
+        if(!overlay) return;
+
+        // Remove existing injected sections to avoid duplicates
+        overlay.querySelectorAll('.injected-section').forEach(e=>e.remove());
+
+        // Heatmap
+        const hmTitle = document.createElement('div');
+        hmTitle.className='prog-section-title injected-section';
+        hmTitle.innerText='◈ ACTIVITY HEATMAP — LAST 26 WEEKS';
+        const hmWrap = document.createElement('div');
+        hmWrap.className='heatmap-wrap injected-section';
+        hmWrap.innerHTML='<canvas id="heatmap-canvas"></canvas><div class="heatmap-legend"><div class="legend-block" style="background:rgba(162,228,243,0.08)"></div>NONE<div class="legend-block" style="background:rgba(162,228,243,0.4)"></div>LOW<div class="legend-block" style="background:rgba(162,228,243,0.9)"></div>MED<div class="legend-block" style="background:var(--gold)"></div>HIGH</div>';
+
+        // Best Hour
+        const bhTitle = document.createElement('div');
+        bhTitle.className='prog-section-title injected-section';
+        bhTitle.innerText='◈ BEST STUDY HOURS';
+        const bhWrap = document.createElement('div');
+        bhWrap.className='best-hour-wrap injected-section';
+        bhWrap.innerHTML='<div id="peak-hour-label" style="font-size:10px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;"></div><div class="hour-bars"></div>';
+
+        // Pie chart
+        const pieTitle = document.createElement('div');
+        pieTitle.className='prog-section-title injected-section';
+        pieTitle.innerText='◈ SUBJECT BREAKDOWN';
+        const pieWrap = document.createElement('div');
+        pieWrap.className='pie-wrap injected-section';
+        pieWrap.innerHTML='<canvas id="pie-canvas" width="120" height="120"></canvas><div class="pie-legend" id="pie-legend"></div>';
+
+        const closeBtn = overlay.querySelector('.btn.danger');
+        if(closeBtn) {
+            overlay.insertBefore(hmTitle, closeBtn);
+            overlay.insertBefore(hmWrap, closeBtn);
+            overlay.insertBefore(bhTitle, closeBtn);
+            overlay.insertBefore(bhWrap, closeBtn);
+            overlay.insertBefore(pieTitle, closeBtn);
+            overlay.insertBefore(pieWrap, closeBtn);
+        }
+        setTimeout(()=>{ renderHeatmap(); renderBestHour(); renderPieChart(); }, 50);
+    };
+
+    // ============================================================
+    // PATCH: saveToStorage to include new state fields
+    // ============================================================
+    const _origSaveToStorage = saveToStorage;
+    saveToStorage = function() {
+        const data = {
+            nodes: nodes.map(n=>({status:n.status,label:n.label,edgeProgress:n.edgeProgress})),
+            timer: state.isBreaching?{activeIdx:state.activeIdx,startTime:state.startTime,duration:state.duration,taskName:state.taskName}:null,
+            progression: {
+                exp:state.exp, level:state.level, totalStudyMinutes:state.totalStudyMinutes,
+                playerName:state.playerName, credits:state.credits, skillPoints:state.skillPoints,
+                skills:state.skills, inventory:state.inventory, achievements:state.achievements,
+                customization:state.customization, streak:state.streak, lastLoginDate:state.lastLoginDate,
+                comboChain:state.comboChain, comboBest:state.comboBest, secretCodesUsed:state.secretCodesUsed,
+                totalTasksCompleted:state.totalTasksCompleted, dailyLog:state.dailyLog||{},
+                levelHistory:state.levelHistory||[], subjectLog:state.subjectLog||{},
+                hourLog:state.hourLog||{}, myRoomCode:state.myRoomCode||null
+            }
+        };
+        localStorage.setItem('tromavoid_premium_v5', JSON.stringify(data));
+    };
+
+    // ============================================================
+    // PATCH: init to load new state fields + request notifications
+    // ============================================================
+    const _origInit = init;
+    init = function() {
+        _origInit();
+        loadDailyLog(); // Merge dedicated daily log
+        // Load new fields from saved state
+        const saved = localStorage.getItem('tromavoid_premium_v5');
+        if(saved) {
+            const p = JSON.parse(saved);
+            if(p.progression) {
+                state.subjectLog = p.progression.subjectLog||{};
+                state.hourLog = p.progression.hourLog||{};
+                state.myRoomCode = p.progression.myRoomCode||null;
+            }
+        }
+        // Render icon picker when overlay opens
+        document.getElementById('overlay').addEventListener('click', ()=>{}, {once:false});
+        // Notification request after 10 seconds
+        setTimeout(requestNotifications, 10000);
+    };
+
+
+    // ============================================================
+    // ONBOARDING TUTORIAL
+    // ============================================================
+    const OB_TOTAL = 9;
+    let obStep = 0;
+
+    function initOnboarding() {
+        // Only show for brand new users (no playerName saved)
+        const saved = localStorage.getItem('tromavoid_premium_v5');
+        const seen = localStorage.getItem('tromavoid_onboarding_done');
+        if(seen) return;
+        if(saved) { const p=JSON.parse(saved); if(p.progression && p.progression.playerName) return; }
+
+        // Build dots
+        const dots = document.getElementById('ob-dots');
+        for(let i=0;i<OB_TOTAL;i++) {
+            const d = document.createElement('div');
+            d.className = 'ob-dot' + (i===0?' active':'');
+            d.onclick = () => goToObStep(i);
+            dots.appendChild(d);
+        }
+        document.getElementById('ob-prog-fill').style.width = '0%';
+        document.getElementById('onboarding-overlay').style.display = 'flex';
+    }
+
+    function goToObStep(n) {
+        document.querySelectorAll('.ob-step').forEach((s,i) => {
+            s.classList.toggle('active', i===n);
+        });
+        document.querySelectorAll('.ob-dot').forEach((d,i) => {
+            d.className = 'ob-dot' + (i===n?' active':i<n?' done':'');
+        });
+        document.getElementById('ob-prog-fill').style.width = ((n/(OB_TOTAL-1))*100)+'%';
+        document.getElementById('ob-next-btn').innerText = n >= OB_TOTAL-1 ? 'BEGIN MISSION ⚔' : 'NEXT ›';
+        obStep = n;
+        try { sfx.click(); } catch(e){}
+    }
+
+    function nextOnboardingStep() {
+        if(obStep >= OB_TOTAL-1) {
+            finishOnboarding();
+        } else {
+            goToObStep(obStep+1);
+        }
+    }
+
+    function skipOnboarding() {
+        finishOnboarding();
+    }
+
+    function finishOnboarding() {
+        const ov = document.getElementById('onboarding-overlay');
+        ov.style.opacity = '0';
+        ov.style.transition = 'opacity 0.4s ease';
+        setTimeout(() => { ov.style.display='none'; ov.style.opacity=''; }, 400);
+        localStorage.setItem('tromavoid_onboarding_done','1');
+        // Pre-fill secret code gift
+        if(!state.secretCodesUsed.includes('NEXUS2024')) {
+            setTimeout(() => {
+                state.credits += 2000;
+                state.secretCodesUsed.push('NEXUS2024');
+                spawnXPRain(2000, innerWidth/2, innerHeight/2);
+                showAchievement('WELCOME_GIFT', '+2000 CREDITS as welcome gift!');
+                updateStatsUI();
+            }, 800);
+        }
+    }
+
+    // Call initOnboarding after init
+    setTimeout(initOnboarding, 500);
+
+    init();
+</script>
+</body>
+</html>
