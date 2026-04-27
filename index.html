@@ -2611,7 +2611,7 @@
     <div class="nav-btn" onclick="openCustomize()">🎨 CUSTOMIZE</div>
     <div class="nav-btn" onclick="openLeaderboard()">👑 RANKS</div>
     <div class="nav-separator"></div>
-    <div class="nav-btn danger" onclick="resetTasksOnly()">🔄 REFRESH</div>
+    <div class="nav-btn danger" onclick="confirmReset()">🔄 REFRESH</div>
     <div class="nav-separator"></div>
     <div class="nav-btn" onclick="openRooms()">👥 ROOMS</div>
     <div class="nav-btn highlight" onclick="openProfile()">🪪 PROFILE</div>
@@ -2684,15 +2684,9 @@
             const saved = localStorage.getItem(DAILY_LOG_KEY);
             if(saved) {
                 const parsed = JSON.parse(saved);
-                // Deep merge: don't overwrite existing keys, add missing ones
-                Object.keys(parsed).forEach(date => {
-                    if(!state.dailyLog[date]) {
-                        state.dailyLog[date] = parsed[date];
-                    } else {
-                        // Take the maximum (in case both have data)
-                        state.dailyLog[date] = Math.max(state.dailyLog[date], parsed[date]);
-                    }
-                });
+                // FIXED: Always use the dedicated log as the single source of truth.
+                // Replace state.dailyLog entirely to prevent double-counting.
+                state.dailyLog = parsed;
             }
         } catch(e) { console.warn('dailyLog load error:', e); }
     }
@@ -2845,7 +2839,7 @@
         if(dashBest) dashBest.innerText = `x${state.comboBest || 0}`;
     }
 
-    setInterval(updateDashboard, 500);
+    setInterval(updateDashboard, 2000);
     function checkStreak() {
         const today = new Date().toDateString();
         if(state.lastLoginDate !== today) {
@@ -2932,7 +2926,7 @@
                 mctx.stroke();
             }
         });
-        setTimeout(drawMiniMap, 500);
+        setTimeout(drawMiniMap, 3000);
     }
 
     // PREMIUM: Power drops
@@ -3295,7 +3289,16 @@
     }
 
     function resetTasksOnly() {
-        // Reset nodes directly - no confirm needed
+        // Save elapsed minutes to daily log before resetting (don't lose progress!)
+        if(state.isBreaching && state.startTime) {
+            const elapsedSecs = (Date.now() - state.startTime) / 1000;
+            const elapsedMins = Math.floor(elapsedSecs / 60);
+            if(elapsedMins > 0) {
+                addMinutesToDailyLog(elapsedMins);
+                state.totalStudyMinutes += elapsedMins;
+                showAchievement('PROGRESS_SAVED', `Saved ${elapsedMins} min before reset`);
+            }
+        }
         state.isBreaching = false;
         state.activeIdx = null;
         state.taskName = "";
@@ -3307,9 +3310,23 @@
             n.edgeProgress = 0;
         });
         saveToStorage();
+        saveDailyLog();
         updateStatsUI();
         terminal.innerHTML = `> ID: ${state.playerName}<br>> STATUS: NODES_RESET<br>> PROGRESS: PRESERVED<br>> CREDITS: ${state.credits}`;
         try { sfx.click(); } catch(e){}
+    }
+
+    // Fix 3: Confirmation dialog before reset
+    function confirmReset() {
+        document.getElementById('confirm-reset-overlay').style.display = 'flex';
+    }
+    function doReset() {
+        document.getElementById('confirm-reset-overlay').style.display = 'none';
+        resetTasksOnly();
+    }
+    function cancelReset() {
+        document.getElementById('confirm-reset-overlay').style.display = 'none';
+        try { sfx.click(); } catch(e) {}
     }
 
     function init() {
@@ -3354,8 +3371,8 @@
         }
         if(!state.playerName) document.getElementById('login-overlay').style.display='flex';
         
-        // Save edgeProgress every 5s during breach so closing mid-task keeps progress
-        setInterval(()=>{ if(state.isBreaching) { saveToStorage(); saveDailyLog(); } }, 5000);
+    // Save edgeProgress every 10s (was 5s) to reduce CPU load
+        setInterval(()=>{ if(state.isBreaching) { saveToStorage(); saveDailyLog(); } }, 10000);
 
         // PREMIUM INITIALIZATIONS:
         checkStreak();
@@ -3372,7 +3389,14 @@
         draw();
     }
 
+    // PERFORMANCE FIX: Cap draw loop at ~20 FPS to reduce CPU/GPU load
+    let _lastDrawTime = 0;
+    const _TARGET_FPS = 20;
+    const _FRAME_MS = 1000 / _TARGET_FPS;
     function draw() {
+        const now = performance.now();
+        if(now - _lastDrawTime < _FRAME_MS) { requestAnimationFrame(draw); return; }
+        _lastDrawTime = now;
         ctx.fillStyle='#000'; ctx.fillRect(0,0,innerWidth,innerHeight);
         ctx.strokeStyle='rgba(162,228,243,0.05)'; ctx.lineWidth=1;
         for(let i=0;i<innerWidth;i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,innerHeight); ctx.stroke(); }
@@ -4305,15 +4329,53 @@
     }
 
     function scheduleReminders() {
-        // Remind every 4 hours if not studying
+        // ============================================================
+        // تحدي الـ 3 دقائق الإسلامي - كل ساعة
+        // ============================================================
+        const islamicChallenges = [
+            { title: '🤲 تحدي الاستغفار', body: 'قل "أستغفر الله" 10 مرات الآن — 3 دقائق فقط!' },
+            { title: '📖 تحدي القرآن', body: 'اقرأ صفحة واحدة من القرآن الكريم — 3 دقائق فقط!' },
+            { title: '🙏 تحدي الصلاة', body: 'صلِّ ركعتين تطوعاً لله — 3 دقائق فقط!' },
+            { title: '💫 تحدي الذكر', body: 'سبّح "سبحان الله وبحمده" 33 مرة — 3 دقائق فقط!' },
+            { title: '🌙 تحدي الدعاء', body: 'ادعُ الله بما تحتاج الآن — 3 دقائق من القلب!' },
+            { title: '📿 تحدي التسبيح', body: 'قل "لا إله إلا الله" 30 مرة — 3 دقائق فقط!' },
+            { title: '❤️ تحدي الصلاة على النبي', body: 'صلِّ على النبي ﷺ 20 مرة — 3 دقائق بركة!' },
+            { title: '🌟 تحدي الشكر', body: 'اذكر 5 نعم من نعم الله عليك — 3 دقائق امتنان!' },
+            { title: '🕌 تحدي التوبة', body: 'تُب إلى الله وجدّد نيتك الآن — 3 دقائق صدق!' },
+            { title: '💎 تحدي الأذكار', body: 'قل أذكار الصباح أو المساء — 3 دقائق حصانة!' },
+            { title: '🌿 تحدي الحوقلة', body: 'قل "لا حول ولا قوة إلا بالله" 20 مرة — 3 دقائق قوة!' },
+            { title: '☀️ تحدي البسملة', body: 'ابدأ كل عمل بـ"بسم الله" واشكر الله 10 مرات — 3 دقائق بداية!' },
+        ];
+
+        let lastChallengeIdx = -1;
+
+        // Reminder every hour if not studying
+        setInterval(()=>{
+            if(Notification.permission === 'granted') {
+                const h = new Date().getHours();
+                if(h >= 6 && h <= 23) {
+                    // Pick a different challenge each time
+                    let idx;
+                    do { idx = Math.floor(Math.random() * islamicChallenges.length); } while(idx === lastChallengeIdx && islamicChallenges.length > 1);
+                    lastChallengeIdx = idx;
+                    const ch = islamicChallenges[idx];
+                    new Notification(ch.title, {
+                        body: ch.body,
+                        icon: 'https://cdn-icons-png.freepik.com/512/94/94112.png'
+                    });
+                }
+            }
+        }, 60 * 60 * 1000); // كل ساعة
+
+        // Study reminder every 4 hours if not studying
         setInterval(()=>{
             if(!state.isBreaching && Notification.permission==='granted') {
-                const h=new Date().getHours();
-                if(h>=8&&h<=22) {
+                const h = new Date().getHours();
+                if(h >= 8 && h <= 22) {
                     new Notification('NEXUS REMINDER', {body:`Agent ${state.playerName} — No mission detected. Time to study!`});
                 }
             }
-        }, 4*60*60*1000);
+        }, 4 * 60 * 60 * 1000);
     }
 
     // ============================================================
@@ -4482,7 +4544,7 @@
     const _realDraw = draw;
     setInterval(()=>{
         if(state.isBreaching) maybeFireRandomEvent();
-    }, 500);
+    }, 2000);
 
     // ============================================================
     // PATCH: renderProgressPage to include heatmap, pie, best hour
@@ -4561,7 +4623,6 @@
     const _origInit = init;
     init = function() {
         _origInit();
-        loadDailyLog(); // Merge dedicated daily log
         // Load new fields from saved state
         const saved = localStorage.getItem('tromavoid_premium_v5');
         if(saved) {
@@ -4572,8 +4633,6 @@
                 state.myRoomCode = p.progression.myRoomCode||null;
             }
         }
-        // Render icon picker when overlay opens
-        document.getElementById('overlay').addEventListener('click', ()=>{}, {once:false});
         // Notification request after 10 seconds
         setTimeout(requestNotifications, 10000);
     };
@@ -4652,5 +4711,22 @@
 
     init();
 </script>
+<!-- CONFIRM RESET OVERLAY -->
+<div id="confirm-reset-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(10px);animation:overlayFadeIn 0.2s ease;">
+    <div style="border:2px solid rgba(255,51,102,0.6);border-radius:10px;padding:40px 50px;text-align:center;background:rgba(5,0,0,0.95);max-width:400px;">
+        <div style="font-size:36px;margin-bottom:16px;">⚠️</div>
+        <div style="font-size:16px;letter-spacing:4px;color:var(--danger);margin-bottom:10px;font-weight:900;">CONFIRM RESET</div>
+        <div style="font-size:11px;color:rgba(162,228,243,0.7);letter-spacing:2px;line-height:1.8;margin-bottom:28px;">
+            هل تريد إعادة تعيين المهام؟<br>
+            سيتم حفظ الدقائق المنجزة حالياً.<br>
+            XP والبيانات لن تُحذف.
+        </div>
+        <div style="display:flex;gap:16px;justify-content:center;">
+            <div onclick="doReset()" style="padding:12px 28px;background:linear-gradient(135deg,var(--danger),#ff6b8a);color:#fff;font-weight:900;font-size:13px;letter-spacing:3px;cursor:pointer;border-radius:5px;border:none;font-family:Courier New,monospace;">✓ نعم، أعِد التعيين</div>
+            <div onclick="cancelReset()" style="padding:12px 28px;border:1.5px solid rgba(162,228,243,0.5);color:var(--ice);font-weight:900;font-size:13px;letter-spacing:3px;cursor:pointer;border-radius:5px;background:rgba(0,0,0,0.7);font-family:Courier New,monospace;">✕ إلغاء</div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
