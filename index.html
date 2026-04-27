@@ -68,6 +68,218 @@
             100% { transform: translateY(100vh); }
         }
 
+        /* ========== HOLOGRAPHIC NODE MAP + 3D PARTICLE FIELD ========== */
+        #holo-wrapper {
+            position: fixed;
+            inset: 0;
+            perspective: 1200px;
+            perspective-origin: 50% 50%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        #holo-wrapper > canvas#network {
+            pointer-events: all;
+            transform-style: preserve-3d;
+            transition: transform 0.12s ease-out;
+            will-change: transform;
+        }
+        /* Holographic shimmer overlay */
+        #holo-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            background:
+                linear-gradient(135deg,
+                    transparent 0%,
+                    rgba(162,228,243,0.03) 20%,
+                    rgba(180,76,255,0.04) 40%,
+                    transparent 60%,
+                    rgba(0,255,136,0.03) 80%,
+                    transparent 100%
+                );
+            mix-blend-mode: screen;
+            transform-style: preserve-3d;
+            transition: background-position 0.1s ease-out, transform 0.12s ease-out;
+            animation: holoShimmer 6s ease-in-out infinite;
+        }
+        @keyframes holoShimmer {
+            0%,100% { opacity: 0.6; filter: hue-rotate(0deg); }
+            25% { opacity: 0.9; filter: hue-rotate(15deg); }
+            50% { opacity: 0.7; filter: hue-rotate(-10deg); }
+            75% { opacity: 1; filter: hue-rotate(25deg); }
+        }
+        /* Holographic scanlines */
+        #holo-scanlines {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 3;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(162,228,243,0.012) 2px,
+                rgba(162,228,243,0.012) 4px
+            );
+            animation: holoScan 8s linear infinite;
+        }
+        @keyframes holoScan {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 200px; }
+        }
+        /* Glitch flash effect */
+        #holo-glitch {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0;
+            mix-blend-mode: overlay;
+        }
+        /* 3D Particle canvas */
+        #particle-3d {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            pointer-events: none !important;
+            z-index: 3 !important;
+            background: transparent !important;
+        }
+        /* Depth vignette for 3D feel */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 5;
+            background: radial-gradient(ellipse at center,
+                transparent 50%,
+                rgba(0,0,0,0.35) 100%
+            );
+        }
+        #bg-canvas {
+            position: fixed !important;
+            inset: 0 !important;
+            pointer-events: none !important;
+            z-index: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+        }
+
+        #bg-theme-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.93);
+            z-index: 400;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(20px);
+            animation: overlayFadeIn 0.3s ease;
+        }
+
+        .bg-overlay-title {
+            font-size: 20px;
+            letter-spacing: 8px;
+            color: var(--ice);
+            text-shadow: 0 0 20px var(--ice);
+            margin-bottom: 8px;
+            font-weight: 900;
+        }
+        .bg-overlay-sub {
+            font-size: 10px;
+            letter-spacing: 4px;
+            color: rgba(162,228,243,0.4);
+            margin-bottom: 36px;
+        }
+        .bg-themes-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            max-width: 780px;
+            width: 90vw;
+            margin-bottom: 32px;
+        }
+        .bg-theme-card {
+            position: relative;
+            border-radius: 12px;
+            border: 1.5px solid rgba(162,228,243,0.15);
+            background: rgba(10,10,15,0.8);
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            aspect-ratio: 16/10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        .bg-theme-card:hover {
+            transform: translateY(-4px) scale(1.03);
+            border-color: var(--ice);
+            box-shadow: 0 0 25px rgba(162,228,243,0.2);
+        }
+        .bg-theme-card.active {
+            border-color: var(--gold);
+            box-shadow: 0 0 30px rgba(255,215,0,0.35);
+        }
+        .bg-theme-card canvas {
+            position: absolute;
+            inset: 0;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: 0;
+            border-radius: 12px;
+        }
+        .bg-theme-info {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            padding: 8px 10px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+            border-radius: 0 0 12px 12px;
+        }
+        .bg-theme-name {
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: #fff;
+        }
+        .bg-theme-desc {
+            font-size: 8px;
+            color: rgba(162,228,243,0.5);
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+        .bg-active-badge {
+            position: absolute;
+            top: 7px; right: 8px;
+            font-size: 9px;
+            color: var(--gold);
+            letter-spacing: 1px;
+            font-weight: 900;
+            z-index: 3;
+            display: none;
+        }
+        .bg-theme-card.active .bg-active-badge { display: block; }
+        .bg-close-btn {
+            padding: 12px 40px;
+            border: 1.5px solid rgba(162,228,243,0.3);
+            color: var(--ice);
+            background: rgba(0,0,0,0.6);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s ease;
+        }
+        .bg-close-btn:hover { background: var(--ice); color: #000; box-shadow: 0 0 20px var(--ice); }
+
         #top-bar {
             position: fixed;
             top: 0;
@@ -955,6 +1167,7 @@
             display: block;
             position: relative;
             z-index: 1;
+            background: transparent !important;
         }
 
         .particle {
@@ -2088,6 +2301,7 @@
 </head>
 <body>
 
+<canvas id="bg-canvas"></canvas>
 <div id="pulse-bg"></div>
 <div id="scanline"></div>
 <canvas id="weather-canvas"></canvas>
@@ -2553,7 +2767,13 @@
     </div>
 </div>
 
-<canvas id="network"></canvas>
+<div id="holo-wrapper">
+    <canvas id="network"></canvas>
+    <div id="holo-overlay"></div>
+    <div id="holo-scanlines"></div>
+    <div id="holo-glitch"></div>
+    <canvas id="particle-3d"></canvas>
+</div>
 
 <!-- PROGRESS PAGE -->
 <div id="progress-overlay">
@@ -2610,6 +2830,7 @@
     <div class="nav-btn" onclick="openTrophies()">🏆 TROPHIES</div>
     <div class="nav-btn" onclick="openCustomize()">🎨 CUSTOMIZE</div>
     <div class="nav-btn" onclick="openLeaderboard()">👑 RANKS</div>
+    <div class="nav-btn" id="bg-nav-btn" onclick="openBgThemes()">🌌 UNIVERSE</div>
     <div class="nav-separator"></div>
     <div class="nav-btn danger" onclick="confirmReset()">🔄 REFRESH</div>
     <div class="nav-separator"></div>
@@ -2679,13 +2900,26 @@
     // ============================================================
     const DAILY_LOG_KEY = 'tromavoid_daily_log_v2';
 
+    // ── APP DATE: يوم جديد بيبدأ من 5 صباحاً ──────────────
+    // لو الساعة أقل من 5am، التطبيق لسه في "أمس"
+    function getAppDate(offsetDays) {
+        offsetDays = offsetDays || 0;
+        const now = new Date();
+        // لو قبل 5am نرجع للتاريخ اللي فات
+        if(now.getHours() < 5) {
+            now.setDate(now.getDate() - 1);
+        }
+        // نطبق أي offset إضافي (مثلاً yesterday = -1)
+        now.setDate(now.getDate() + offsetDays);
+        // نرجع string زي toDateString بالضبط
+        return now.toDateString();
+    }
+
     function loadDailyLog() {
         try {
             const saved = localStorage.getItem(DAILY_LOG_KEY);
             if(saved) {
                 const parsed = JSON.parse(saved);
-                // FIXED: Always use the dedicated log as the single source of truth.
-                // Replace state.dailyLog entirely to prevent double-counting.
                 state.dailyLog = parsed;
             }
         } catch(e) { console.warn('dailyLog load error:', e); }
@@ -2700,9 +2934,9 @@
 
     function addMinutesToDailyLog(minutes) {
         if(!state.dailyLog) state.dailyLog = {};
-        const todayKey = new Date().toDateString();
+        const todayKey = getAppDate();
         state.dailyLog[todayKey] = (state.dailyLog[todayKey] || 0) + minutes;
-        saveDailyLog(); // Save immediately to dedicated key
+        saveDailyLog();
     }
 
 
@@ -2841,9 +3075,9 @@
 
     setInterval(updateDashboard, 2000);
     function checkStreak() {
-        const today = new Date().toDateString();
+        const today = getAppDate();
         if(state.lastLoginDate !== today) {
-            const yesterday = new Date(Date.now() - 86400000).toDateString();
+            const yesterday = getAppDate(-1);
             if(state.lastLoginDate === yesterday) {
                 state.streak++;
             } else if(state.lastLoginDate !== today) {
@@ -3092,7 +3326,7 @@
 
     // PREMIUM: Daily challenges
     function initDailyChallenges() {
-        const today = new Date().toDateString();
+        const today = getAppDate();
         const saved = localStorage.getItem('daily_challenges_date');
         if(saved !== today) {
             state.dailyChallenges = challengePool.slice(0,3).map(c=>c.id);
@@ -3397,7 +3631,12 @@
         const now = performance.now();
         if(now - _lastDrawTime < _FRAME_MS) { requestAnimationFrame(draw); return; }
         _lastDrawTime = now;
-        ctx.fillStyle='#000'; ctx.fillRect(0,0,innerWidth,innerHeight);
+        // BG THEME: لو فيه ثيم غير nexus شغال، نمسح بدل ما نلوّن أسود
+        if(window._bgThemeId && window._bgThemeId !== 'nexus') {
+            ctx.clearRect(0,0,innerWidth,innerHeight);
+        } else {
+            ctx.fillStyle='#000'; ctx.fillRect(0,0,innerWidth,innerHeight);
+        }
         ctx.strokeStyle='rgba(162,228,243,0.05)'; ctx.lineWidth=1;
         for(let i=0;i<innerWidth;i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,innerHeight); ctx.stroke(); }
         for(let i=0;i<innerHeight;i+=50) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(innerWidth,i); ctx.stroke(); }
@@ -3861,8 +4100,8 @@
     }
 
     function renderProgressPage() {
-        const today = new Date().toDateString();
-        const yesterday = new Date(Date.now() - 86400000).toDateString();
+        const today = getAppDate();
+        const yesterday = getAppDate(-1);
 
         // Top cards
         document.getElementById('pg-today').innerText = state.dailyLog[today] || 0;
@@ -3872,12 +4111,14 @@
         document.getElementById('pg-level').innerText = state.level;
         document.getElementById('pg-streak').innerText = state.streak;
 
-        // Last 7 days bars
+        // Last 7 days bars — كل يوم بيبدأ من 5am
         const histEl = document.getElementById('pg-history-bars');
         histEl.innerHTML = '';
         const days = [];
         for(let i = 6; i >= 0; i--) {
-            const d = new Date(Date.now() - i * 86400000);
+            const d = new Date();
+            if(d.getHours() < 5) d.setDate(d.getDate() - 1); // app day shift
+            d.setDate(d.getDate() - i);
             days.push({ key: d.toDateString(), label: i === 0 ? 'TODAY' : i === 1 ? 'YEST.' : d.toLocaleDateString('en',{weekday:'short'}).toUpperCase() });
         }
         const maxMins = Math.max(1, ...days.map(d => state.dailyLog[d.key] || 0));
@@ -4047,7 +4288,9 @@
         ctx2.clearRect(0,0,w,h);
 
         const maxVal = Math.max(1, ...Object.values(state.dailyLog || {}));
+        // app day starts at 5am
         const today = new Date();
+        if(today.getHours() < 5) today.setDate(today.getDate() - 1);
 
         // Day labels
         ['S','M','T','W','T','F','S'].forEach((d,i) => {
@@ -4393,7 +4636,10 @@
         const days=[];
         let weekTotal=0, bestDay='', bestDayMins=0;
         for(let i=6;i>=0;i--){
-            const d=new Date(Date.now()-i*86400000);
+            // app day starts at 5am
+            const d=new Date();
+            if(d.getHours()<5) d.setDate(d.getDate()-1);
+            d.setDate(d.getDate()-i);
             const key=d.toDateString();
             const mins=state.dailyLog[key]||0;
             weekTotal+=mins;
@@ -4711,6 +4957,330 @@
 
     init();
 </script>
+<!-- HOLOGRAPHIC NODE MAP + 3D PARTICLE FIELD ENGINE -->
+<script>
+(function() {
+'use strict';
+
+// ═══════════════════════════════════════════════════════
+//  HOLOGRAPHIC NODE MAP — Mouse-tracked 3D tilt
+// ═══════════════════════════════════════════════════════
+const networkCanvas = document.getElementById('network');
+const holoOverlay   = document.getElementById('holo-overlay');
+const holoGlitch    = document.getElementById('holo-glitch');
+
+let mouseX = 0, mouseY = 0;
+let targetRX = 0, targetRY = 0;
+let currentRX = 0, currentRY = 0;
+const TILT_MAX = 6; // max tilt degrees
+const TILT_LERP = 0.07;
+
+// Track mouse for tilt
+window.addEventListener('mousemove', e => {
+    mouseX = (e.clientX / innerWidth  - 0.5) * 2;  // -1 to 1
+    mouseY = (e.clientY / innerHeight - 0.5) * 2;  // -1 to 1
+    targetRY =  mouseX * TILT_MAX;
+    targetRX = -mouseY * TILT_MAX;
+});
+window.addEventListener('mouseleave', () => {
+    targetRX = 0; targetRY = 0;
+});
+
+// Touch support
+window.addEventListener('touchmove', e => {
+    if(!e.touches[0]) return;
+    mouseX = (e.touches[0].clientX / innerWidth  - 0.5) * 2;
+    mouseY = (e.touches[0].clientY / innerHeight - 0.5) * 2;
+    targetRY =  mouseX * (TILT_MAX * 0.5);
+    targetRX = -mouseY * (TILT_MAX * 0.5);
+}, { passive: true });
+
+// Glitch flashes (random)
+function triggerGlitch() {
+    const colors = [
+        'rgba(162,228,243,0.06)',
+        'rgba(180,76,255,0.05)',
+        'rgba(0,255,136,0.04)',
+        'rgba(255,51,102,0.05)',
+    ];
+    const c = colors[Math.floor(Math.random() * colors.length)];
+    holoGlitch.style.background = c;
+    holoGlitch.style.opacity = '1';
+    // Random horizontal shift
+    const shift = (Math.random() - 0.5) * 8;
+    holoGlitch.style.transform = `translateX(${shift}px)`;
+    setTimeout(() => {
+        holoGlitch.style.opacity = '0';
+        holoGlitch.style.transform = 'none';
+    }, 60 + Math.random() * 80);
+}
+// Random glitch every 3-8 seconds
+(function scheduleGlitch() {
+    setTimeout(() => { triggerGlitch(); scheduleGlitch(); }, 3000 + Math.random() * 5000);
+})();
+
+// ═══════════════════════════════════════════════════════
+//  3D PARTICLE FIELD — Full 3D starfield + floating orbs
+// ═══════════════════════════════════════════════════════
+const p3Canvas = document.getElementById('particle-3d');
+const p3Ctx    = p3Canvas.getContext('2d');
+
+let PW, PH;
+function resizeP3() {
+    PW = p3Canvas.width  = innerWidth;
+    PH = p3Canvas.height = innerHeight;
+}
+resizeP3();
+window.addEventListener('resize', resizeP3);
+
+// 3D projection helper
+const FOV = 500;
+function project(x3, y3, z3) {
+    const scale = FOV / (FOV + z3);
+    return {
+        x: x3 * scale + PW / 2,
+        y: y3 * scale + PH / 2,
+        scale,
+    };
+}
+
+// ── Star particles (deep 3D starfield) ─────────────────
+const STAR_COUNT = 280;
+const stars = Array.from({ length: STAR_COUNT }, () => ({
+    x: (Math.random() - 0.5) * PW * 3,
+    y: (Math.random() - 0.5) * PH * 3,
+    z: Math.random() * FOV * 2,
+    speed: 0.4 + Math.random() * 0.8,
+    color: ['#A2E4F3','#B44CFF','#00FF88','#FFD700','#FF3366','#ffffff'][Math.floor(Math.random()*6)],
+    size: 0.5 + Math.random() * 1.5,
+    trail: [],
+    trailLen: Math.floor(Math.random() * 6 + 3),
+}));
+
+// ── Floating data orbs (3D spheres) ────────────────────
+const ORB_COUNT = 22;
+const orbs = Array.from({ length: ORB_COUNT }, (_, i) => ({
+    x: (Math.random() - 0.5) * PW * 2,
+    y: (Math.random() - 0.5) * PH * 2,
+    z: (Math.random() - 0.5) * FOV * 1.5,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: (Math.random() - 0.5) * 0.3,
+    vz: (Math.random() - 0.5) * 0.5,
+    r: 3 + Math.random() * 8,
+    phase: Math.random() * Math.PI * 2,
+    speed: 0.3 + Math.random() * 0.5,
+    color: ['#A2E4F3','#B44CFF','#00FF88','#FFD700','#FF3366'][i % 5],
+    pulseSpeed: 0.02 + Math.random() * 0.03,
+}));
+
+// ── Data streams (3D lines connecting orbs) ─────────────
+const CONNECTIONS = [];
+for (let i = 0; i < ORB_COUNT; i++) {
+    for (let j = i + 1; j < ORB_COUNT; j++) {
+        if (Math.random() < 0.12) {
+            CONNECTIONS.push([i, j]);
+        }
+    }
+}
+
+// ── Floating hex rings (3D rotation) ───────────────────
+const HEX_COUNT = 8;
+const hexRings = Array.from({ length: HEX_COUNT }, () => ({
+    x: (Math.random() - 0.5) * PW * 2.5,
+    y: (Math.random() - 0.5) * PH * 2.5,
+    z: (Math.random() - 0.5) * FOV,
+    radius: 30 + Math.random() * 60,
+    rotX: Math.random() * Math.PI * 2,
+    rotY: Math.random() * Math.PI * 2,
+    rotSpeedX: (Math.random() - 0.5) * 0.008,
+    rotSpeedY: (Math.random() - 0.5) * 0.01,
+    color: ['rgba(162,228,243','rgba(180,76,255','rgba(0,255,136'][Math.floor(Math.random()*3)],
+    alpha: 0.06 + Math.random() * 0.1,
+    pulsePhase: Math.random() * Math.PI * 2,
+}));
+
+// ── Main 3D render loop ─────────────────────────────────
+let p3Time = 0;
+let p3Last = 0;
+const P3_FPS = 30, P3_MS = 1000 / P3_FPS;
+
+function renderP3(ts) {
+    requestAnimationFrame(renderP3);
+    if (ts - p3Last < P3_MS) return;
+    const dt = ts - p3Last;
+    p3Last = ts;
+    p3Time += 0.016;
+
+    p3Ctx.clearRect(0, 0, PW, PH);
+
+    // Mouse parallax offset (slight camera drift)
+    const camOffX = mouseX * 20;
+    const camOffY = mouseY * 20;
+
+    // ── Draw hex rings (back layer) ─────────────────────
+    hexRings.forEach(h => {
+        h.rotX += h.rotSpeedX;
+        h.rotY += h.rotSpeedY;
+        const pulse = 1 + 0.15 * Math.sin(p3Time * 1.5 + h.pulsePhase);
+        const r = h.radius * pulse;
+        const proj = project(h.x + camOffX, h.y + camOffY, h.z);
+        if (proj.scale < 0.1 || proj.scale > 3) return;
+        const sides = 6;
+        const a = h.alpha * proj.scale;
+        p3Ctx.save();
+        p3Ctx.translate(proj.x, proj.y);
+        p3Ctx.scale(proj.scale, proj.scale * Math.cos(h.rotX));
+        p3Ctx.rotate(h.rotY);
+        p3Ctx.beginPath();
+        for (let s = 0; s <= sides; s++) {
+            const ang = (s / sides) * Math.PI * 2;
+            const px = Math.cos(ang) * r;
+            const py = Math.sin(ang) * r;
+            s === 0 ? p3Ctx.moveTo(px, py) : p3Ctx.lineTo(px, py);
+        }
+        p3Ctx.strokeStyle = `${h.color},${a})`;
+        p3Ctx.lineWidth = 1.5 * proj.scale;
+        p3Ctx.shadowColor = `${h.color},0.5)`;
+        p3Ctx.shadowBlur = 8 * proj.scale;
+        p3Ctx.stroke();
+        p3Ctx.shadowBlur = 0;
+        p3Ctx.restore();
+    });
+
+    // ── Draw data stream connections ────────────────────
+    CONNECTIONS.forEach(([i, j]) => {
+        const a = orbs[i], b = orbs[j];
+        const pa = project(a.x + camOffX, a.y + camOffY, a.z);
+        const pb = project(b.x + camOffX, b.y + camOffY, b.z);
+        if (pa.scale < 0.1 || pb.scale < 0.1) return;
+        const midZ = (a.z + b.z) / 2;
+        const alpha = Math.min(pa.scale, pb.scale) * 0.08;
+        p3Ctx.beginPath();
+        p3Ctx.moveTo(pa.x, pa.y);
+        p3Ctx.lineTo(pb.x, pb.y);
+        p3Ctx.strokeStyle = `rgba(162,228,243,${alpha})`;
+        p3Ctx.lineWidth = 0.5;
+        p3Ctx.stroke();
+    });
+
+    // ── Draw floating orbs (3D spheres) ────────────────
+    orbs.forEach(o => {
+        o.x += o.vx; o.y += o.vy; o.z += o.vz;
+        // Bounce softly at boundaries
+        if (Math.abs(o.x) > PW * 1.2) o.vx *= -1;
+        if (Math.abs(o.y) > PH * 1.2) o.vy *= -1;
+        if (Math.abs(o.z) > FOV * 0.8) o.vz *= -1;
+        const pulse = 1 + 0.2 * Math.sin(p3Time * o.pulseSpeed * 60 + o.phase);
+        const proj = project(o.x + camOffX, o.y + camOffY, o.z);
+        if (proj.scale < 0.05 || proj.scale > 4) return;
+        const r = o.r * proj.scale * pulse;
+        const alpha = Math.min(1, proj.scale) * 0.7;
+        // Outer glow
+        const grd = p3Ctx.createRadialGradient(proj.x, proj.y, 0, proj.x, proj.y, r * 3);
+        grd.addColorStop(0, o.color + 'cc');
+        grd.addColorStop(0.4, o.color + '44');
+        grd.addColorStop(1, 'transparent');
+        p3Ctx.globalAlpha = alpha * 0.6;
+        p3Ctx.fillStyle = grd;
+        p3Ctx.beginPath();
+        p3Ctx.arc(proj.x, proj.y, r * 3, 0, Math.PI * 2);
+        p3Ctx.fill();
+        // Core sphere
+        const coreGrd = p3Ctx.createRadialGradient(proj.x - r*0.3, proj.y - r*0.3, 0, proj.x, proj.y, r);
+        coreGrd.addColorStop(0, '#fff');
+        coreGrd.addColorStop(0.3, o.color);
+        coreGrd.addColorStop(1, o.color + '44');
+        p3Ctx.globalAlpha = alpha;
+        p3Ctx.fillStyle = coreGrd;
+        p3Ctx.beginPath();
+        p3Ctx.arc(proj.x, proj.y, r, 0, Math.PI * 2);
+        p3Ctx.fill();
+        p3Ctx.globalAlpha = 1;
+    });
+
+    // ── Draw starfield with trails ──────────────────────
+    stars.forEach(s => {
+        // Move toward viewer (z-axis warp)
+        s.z -= s.speed * (1 + Math.abs(mouseX) * 0.5);
+        if (s.z <= 0) {
+            s.z = FOV * 2;
+            s.x = (Math.random() - 0.5) * PW * 3;
+            s.y = (Math.random() - 0.5) * PH * 3;
+            s.trail = [];
+        }
+        const proj = project(s.x + camOffX * 0.5, s.y + camOffY * 0.5, s.z);
+        if (proj.x < 0 || proj.x > PW || proj.y < 0 || proj.y > PH) {
+            s.trail = [];
+            return;
+        }
+        // Save trail
+        s.trail.push({ x: proj.x, y: proj.y });
+        if (s.trail.length > s.trailLen) s.trail.shift();
+        // Draw trail
+        if (s.trail.length > 1) {
+            for (let t = 1; t < s.trail.length; t++) {
+                const ta = (t / s.trail.length) * proj.scale * 0.5;
+                p3Ctx.globalAlpha = ta;
+                p3Ctx.strokeStyle = s.color;
+                p3Ctx.lineWidth = s.size * proj.scale * 0.6;
+                p3Ctx.beginPath();
+                p3Ctx.moveTo(s.trail[t-1].x, s.trail[t-1].y);
+                p3Ctx.lineTo(s.trail[t].x, s.trail[t].y);
+                p3Ctx.stroke();
+            }
+        }
+        // Draw star core
+        const sz = Math.max(0.3, s.size * proj.scale);
+        p3Ctx.globalAlpha = Math.min(1, proj.scale * 0.8);
+        p3Ctx.fillStyle = s.color;
+        p3Ctx.shadowColor = s.color;
+        p3Ctx.shadowBlur = sz * 3;
+        p3Ctx.beginPath();
+        p3Ctx.arc(proj.x, proj.y, sz, 0, Math.PI * 2);
+        p3Ctx.fill();
+        p3Ctx.shadowBlur = 0;
+        p3Ctx.globalAlpha = 1;
+    });
+
+    // ── Update 3D tilt on network canvas ───────────────
+    currentRX += (targetRX - currentRX) * TILT_LERP;
+    currentRY += (targetRY - currentRY) * TILT_LERP;
+    const tiltTransform = `perspective(1200px) rotateX(${currentRX}deg) rotateY(${currentRY}deg)`;
+    networkCanvas.style.transform = tiltTransform;
+    holoOverlay.style.transform   = tiltTransform;
+    // Shift shimmer based on mouse
+    const shimmerX = 50 + mouseX * 20;
+    const shimmerY = 50 + mouseY * 20;
+    holoOverlay.style.backgroundPosition = `${shimmerX}% ${shimmerY}%`;
+}
+requestAnimationFrame(renderP3);
+
+// ── Edge glow on network canvas ─────────────────────────
+networkCanvas.style.boxShadow = `
+    0 0 40px rgba(162,228,243,0.08),
+    0 0 80px rgba(162,228,243,0.04),
+    inset 0 0 30px rgba(162,228,243,0.03)
+`;
+
+})();
+</script>
+</body>
+<div id="confirm-reset-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(10px);animation:overlayFadeIn 0.2s ease;">
+    <div style="border:2px solid rgba(255,51,102,0.6);border-radius:10px;padding:40px 50px;text-align:center;background:rgba(5,0,0,0.95);max-width:400px;">
+        <div style="font-size:36px;margin-bottom:16px;">⚠️</div>
+        <div style="font-size:16px;letter-spacing:4px;color:var(--danger);margin-bottom:10px;font-weight:900;">CONFIRM RESET</div>
+        <div style="font-size:11px;color:rgba(162,228,243,0.7);letter-spacing:2px;line-height:1.8;margin-bottom:28px;">
+            هل تريد إعادة تعيين المهام؟<br>
+            سيتم حفظ الدقائق المنجزة حالياً.<br>
+            XP والبيانات لن تُحذف.
+        </div>
+        <div style="display:flex;gap:16px;justify-content:center;">
+            <div onclick="doReset()" style="padding:12px 28px;background:linear-gradient(135deg,var(--danger),#ff6b8a);color:#fff;font-weight:900;font-size:13px;letter-spacing:3px;cursor:pointer;border-radius:5px;border:none;font-family:Courier New,monospace;">✓ نعم، أعِد التعيين</div>
+            <div onclick="cancelReset()" style="padding:12px 28px;border:1.5px solid rgba(162,228,243,0.5);color:var(--ice);font-weight:900;font-size:13px;letter-spacing:3px;cursor:pointer;border-radius:5px;background:rgba(0,0,0,0.7);font-family:Courier New,monospace;">✕ إلغاء</div>
+        </div>
+    </div>
+</div>
+
 <!-- CONFIRM RESET OVERLAY -->
 <div id="confirm-reset-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(10px);animation:overlayFadeIn 0.2s ease;">
     <div style="border:2px solid rgba(255,51,102,0.6);border-radius:10px;padding:40px 50px;text-align:center;background:rgba(5,0,0,0.95);max-width:400px;">
@@ -4728,5 +5298,654 @@
     </div>
 </div>
 
+<!-- BG THEME OVERLAY -->
+<div id="bg-theme-overlay">
+    <div class="bg-overlay-title">◈ UNIVERSE THEME</div>
+    <div class="bg-overlay-sub">SELECT YOUR UNIVERSE — SAVED AUTOMATICALLY</div>
+    <div class="bg-themes-grid" id="bg-themes-grid"></div>
+    <div class="bg-close-btn" onclick="closeBgThemes()">[ ✕ CLOSE ]</div>
+</div>
+
+<script>
+// ============================================================
+//  ANIMATED BACKGROUND THEMES ENGINE
+//  z-index: 0 — خلف كل حاجة، مش بتأثر على الكود الأصلي
+// ============================================================
+(function() {
+    const BG_KEY = 'tromavoid_bg_theme';
+    const bgCanvas = document.getElementById('bg-canvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    let W, H, animId = null, currentThemeId = localStorage.getItem(BG_KEY) || 'nexus';
+    window._bgThemeId = currentThemeId; // expose to main draw loop
+
+    function resize() {
+        W = bgCanvas.width  = innerWidth;
+        H = bgCanvas.height = innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // ── theme definitions ──────────────────────────────────
+    const THEMES = {
+
+        nexus: {
+            name: 'NEXUS VOID', icon: '⬛', desc: 'Original theme — pure void darkness',
+            color: '#A2E4F3',
+            init() { this._p = []; },
+            draw(t) {
+                bgCtx.fillStyle = '#000';
+                bgCtx.fillRect(0,0,W,H);
+                // Subtle hex grid pulse
+                const g = 60, pulse = 0.015 + 0.008 * Math.sin(t/2000);
+                bgCtx.strokeStyle = `rgba(162,228,243,${pulse})`;
+                bgCtx.lineWidth = 0.5;
+                for(let x=0;x<W+g;x+=g) { bgCtx.beginPath(); bgCtx.moveTo(x,0); bgCtx.lineTo(x,H); bgCtx.stroke(); }
+                for(let y=0;y<H+g;y+=g) { bgCtx.beginPath(); bgCtx.moveTo(0,y); bgCtx.lineTo(W,y); bgCtx.stroke(); }
+            }
+        },
+
+        space: {
+            name: 'DEEP SPACE', icon: '🌌', desc: 'Stars & nebulas — infinite cosmos',
+            color: '#B8C6FF',
+            init() {
+                this._stars = Array.from({length:220}, () => ({
+                    x: Math.random()*W, y: Math.random()*H,
+                    r: Math.random()*1.8 + 0.2,
+                    speed: Math.random()*0.08 + 0.01,
+                    phase: Math.random()*Math.PI*2,
+                    color: ['#fff','#B8C6FF','#FFD7B8','#C8F0FF'][Math.floor(Math.random()*4)]
+                }));
+                this._nebula = Array.from({length:5}, () => ({
+                    x: Math.random()*W, y: Math.random()*H,
+                    r: 120+Math.random()*200,
+                    c: ['rgba(100,80,200,', 'rgba(60,0,120,', 'rgba(0,60,140,', 'rgba(120,30,80,', 'rgba(20,100,120,'][Math.floor(Math.random()*5)],
+                    phase: Math.random()*Math.PI*2
+                }));
+            },
+            draw(t) {
+                bgCtx.fillStyle='#000'; bgCtx.fillRect(0,0,W,H);
+                // nebulas
+                this._nebula.forEach(n=>{
+                    const a = 0.04 + 0.015*Math.sin(t/4000+n.phase);
+                    const g2 = bgCtx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r);
+                    g2.addColorStop(0,n.c+''+a+')'); g2.addColorStop(1,'transparent');
+                    bgCtx.fillStyle=g2; bgCtx.beginPath(); bgCtx.arc(n.x,n.y,n.r,0,Math.PI*2); bgCtx.fill();
+                });
+                // stars twinkle
+                this._stars.forEach(s=>{
+                    const a = 0.5 + 0.5*Math.sin(t*s.speed+s.phase);
+                    bgCtx.beginPath(); bgCtx.arc(s.x,s.y,s.r,0,Math.PI*2);
+                    bgCtx.fillStyle = s.color.replace(')', `,${a})`).replace('rgb','rgba') || `rgba(255,255,255,${a})`;
+                    try { bgCtx.fillStyle = s.color; bgCtx.globalAlpha = a; bgCtx.fill(); bgCtx.globalAlpha=1; } catch(e){}
+                });
+                // shooting star every ~5s
+                const ss = (t/80)%500;
+                if(ss < 40) {
+                    const sx = (W*0.1 + W*0.7*(Math.floor(t/40000)%7)/7);
+                    bgCtx.save();
+                    bgCtx.globalAlpha = ss<20 ? ss/20 : (40-ss)/20;
+                    const sg = bgCtx.createLinearGradient(sx+ss*2,H*0.2+ss,sx,H*0.2);
+                    sg.addColorStop(0,'rgba(255,255,255,0)'); sg.addColorStop(1,'rgba(255,255,255,0.9)');
+                    bgCtx.strokeStyle=sg; bgCtx.lineWidth=1.5;
+                    bgCtx.beginPath(); bgCtx.moveTo(sx+ss*2,H*0.2+ss); bgCtx.lineTo(sx,H*0.2); bgCtx.stroke();
+                    bgCtx.restore();
+                }
+            }
+        },
+
+        aurora: {
+            name: 'AURORA', icon: '🌠', desc: 'Northern lights — waves of color',
+            color: '#00FF88',
+            init() { this._bands = Array.from({length:6},(_,i)=>({ offset: i/6, speed: 0.3+Math.random()*0.4, phase: Math.random()*Math.PI*2 })); },
+            draw(t) {
+                bgCtx.fillStyle='#000'; bgCtx.fillRect(0,0,W,H);
+                const colors = [
+                    [0,255,136], [0,180,255], [180,60,255],
+                    [0,255,180], [60,255,100], [120,80,255]
+                ];
+                this._bands.forEach((b,i)=>{
+                    const c = colors[i%colors.length];
+                    const y0 = H*0.1 + H*0.5*b.offset;
+                    const amp = 40 + 30*Math.sin(t/3000+b.phase);
+                    const freq = 0.003 + 0.001*i;
+                    const grad = bgCtx.createLinearGradient(0,y0-amp,0,y0+amp+80);
+                    const a = 0.04 + 0.03*Math.sin(t/2000*b.speed+b.phase);
+                    grad.addColorStop(0,'transparent');
+                    grad.addColorStop(0.4,`rgba(${c[0]},${c[1]},${c[2]},${a})`);
+                    grad.addColorStop(0.6,`rgba(${c[0]},${c[1]},${c[2]},${a*0.6})`);
+                    grad.addColorStop(1,'transparent');
+                    bgCtx.fillStyle=grad;
+                    bgCtx.beginPath(); bgCtx.moveTo(0,H);
+                    for(let x=0;x<=W;x+=8) {
+                        const y = y0 + amp*Math.sin(x*freq + t/1500*b.speed + b.phase);
+                        bgCtx.lineTo(x,y);
+                    }
+                    bgCtx.lineTo(W,H); bgCtx.closePath(); bgCtx.fill();
+                });
+            }
+        },
+
+        cyber: {
+            name: 'CYBER CITY', icon: '🏙️', desc: 'Neon city at night — rain & glow',
+            color: '#FF3366',
+            init() {
+                this._buildings = Array.from({length:28}, (_,i) => ({
+                    x: i*(W/28), w: W/28*0.85,
+                    h: 80 + Math.random()*(H*0.45),
+                    windows: Array.from({length:Math.floor(Math.random()*8+3)}, () => ({
+                        on: Math.random()>0.3, timer: Math.random()*200
+                    })),
+                    color: ['#FF3366','#A2E4F3','#B44CFF','#FFD700','#00FF88'][Math.floor(Math.random()*5)]
+                }));
+                this._rain = Array.from({length:80}, () => ({
+                    x: Math.random()*W, y: Math.random()*H,
+                    speed: 8+Math.random()*10, len: 10+Math.random()*20, a: 0.1+Math.random()*0.3
+                }));
+            },
+            draw(t) {
+                bgCtx.fillStyle='#000'; bgCtx.fillRect(0,0,W,H);
+                // city glow horizon
+                const hor = bgCtx.createLinearGradient(0,H*0.55,0,H);
+                hor.addColorStop(0,'rgba(180,0,60,0.12)'); hor.addColorStop(1,'rgba(180,0,60,0.04)');
+                bgCtx.fillStyle=hor; bgCtx.fillRect(0,H*0.55,W,H*0.45);
+                // buildings
+                this._buildings.forEach(b=>{
+                    const by = H - b.h;
+                    bgCtx.fillStyle='#0a0a12';
+                    bgCtx.fillRect(b.x, by, b.w, b.h);
+                    bgCtx.strokeStyle = b.color+'33'; bgCtx.lineWidth=1;
+                    bgCtx.strokeRect(b.x, by, b.w, b.h);
+                    // roof glow
+                    bgCtx.shadowColor=b.color; bgCtx.shadowBlur=8;
+                    bgCtx.strokeStyle=b.color+'66'; bgCtx.lineWidth=0.8;
+                    bgCtx.beginPath(); bgCtx.moveTo(b.x,by); bgCtx.lineTo(b.x+b.w,by); bgCtx.stroke();
+                    bgCtx.shadowBlur=0;
+                    // windows
+                    b.windows.forEach((w,wi)=>{
+                        w.timer--; if(w.timer<0){ w.on=Math.random()>0.2; w.timer=100+Math.random()*300; }
+                        if(!w.on) return;
+                        const wx = b.x+4 + (wi%3)*(b.w/3);
+                        const wy = by+8 + Math.floor(wi/3)*20;
+                        bgCtx.fillStyle = b.color+'99';
+                        bgCtx.fillRect(wx, wy, b.w/3-4, 10);
+                    });
+                });
+                // rain
+                this._rain.forEach(r=>{
+                    r.y += r.speed;
+                    if(r.y > H) { r.y=0; r.x=Math.random()*W; }
+                    bgCtx.strokeStyle=`rgba(162,228,243,${r.a})`;
+                    bgCtx.lineWidth=0.8;
+                    bgCtx.beginPath(); bgCtx.moveTo(r.x,r.y); bgCtx.lineTo(r.x-2,r.y+r.len); bgCtx.stroke();
+                });
+            }
+        },
+
+        lava: {
+            name: 'LAVA CORE', icon: '🌋', desc: 'Molten earth core — raw energy',
+            color: '#FF6B00',
+            init() {
+                this._blobs = Array.from({length:12}, () => ({
+                    x: Math.random()*W, y: H*0.6+Math.random()*H*0.4,
+                    vx: (Math.random()-0.5)*0.5, vy: -0.3-Math.random()*0.5,
+                    r: 60+Math.random()*120, phase: Math.random()*Math.PI*2,
+                    c: Math.random()>0.5 ? [255,80,0] : [255,160,0]
+                }));
+            },
+            draw(t) {
+                bgCtx.fillStyle='#0a0000'; bgCtx.fillRect(0,0,W,H);
+                // deep glow from bottom
+                const lavaBg = bgCtx.createLinearGradient(0,H*0.6,0,H);
+                lavaBg.addColorStop(0,'rgba(180,40,0,0.3)'); lavaBg.addColorStop(1,'rgba(255,100,0,0.15)');
+                bgCtx.fillStyle=lavaBg; bgCtx.fillRect(0,H*0.6,W,H*0.4);
+                // lava blobs
+                this._blobs.forEach(b=>{
+                    b.x += b.vx; b.y += b.vy*0.4;
+                    if(b.x<-b.r||b.x>W+b.r) b.vx*=-1;
+                    if(b.y < H*0.4) { b.y=H*0.7+Math.random()*H*0.3; b.x=Math.random()*W; }
+                    const pulse = 1 + 0.15*Math.sin(t/800+b.phase);
+                    const a = 0.05 + 0.04*Math.sin(t/1200+b.phase);
+                    const bg = bgCtx.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r*pulse);
+                    bg.addColorStop(0,`rgba(${b.c[0]},${b.c[1]},${b.c[2]},${a*2})`);
+                    bg.addColorStop(0.5,`rgba(${b.c[0]},${b.c[1]},${b.c[2]},${a})`);
+                    bg.addColorStop(1,'transparent');
+                    bgCtx.fillStyle=bg; bgCtx.beginPath(); bgCtx.arc(b.x,b.y,b.r*pulse,0,Math.PI*2); bgCtx.fill();
+                });
+                // cracks of light
+                bgCtx.strokeStyle='rgba(255,120,0,0.12)'; bgCtx.lineWidth=1;
+                for(let i=0;i<6;i++){
+                    const cx=W*(i/6); const cy=H*(0.5+0.1*Math.sin(t/2000+i));
+                    bgCtx.beginPath(); bgCtx.moveTo(cx,H); bgCtx.lineTo(cx+30*Math.sin(t/1000+i), cy); bgCtx.stroke();
+                }
+            }
+        },
+
+        ocean: {
+            name: 'OCEAN ABYSS', icon: '🌊', desc: 'Deep ocean abyss — bioluminescence',
+            color: '#00CFFF',
+            init() {
+                this._particles = Array.from({length:100}, () => ({
+                    x: Math.random()*W, y: Math.random()*H,
+                    r: 1+Math.random()*3, speed: 0.2+Math.random()*0.6,
+                    phase: Math.random()*Math.PI*2, drift: (Math.random()-0.5)*0.3
+                }));
+                this._waves = Array.from({length:8}, (_,i) => ({
+                    y: H*0.1 + H*0.12*i, amp: 20+i*8, freq: 0.004-i*0.0003, speed: 0.3-i*0.02, phase: i*0.7
+                }));
+            },
+            draw(t) {
+                bgCtx.fillStyle='#000610'; bgCtx.fillRect(0,0,W,H);
+                // depth gradient
+                const dg = bgCtx.createLinearGradient(0,0,0,H);
+                dg.addColorStop(0,'rgba(0,20,60,0.3)'); dg.addColorStop(1,'rgba(0,5,20,0.6)');
+                bgCtx.fillStyle=dg; bgCtx.fillRect(0,0,W,H);
+                // wave layers
+                this._waves.forEach((w,i)=>{
+                    const a = 0.03 - i*0.003;
+                    bgCtx.fillStyle=`rgba(0,180,255,${a})`;
+                    bgCtx.beginPath(); bgCtx.moveTo(0,H);
+                    for(let x=0;x<=W;x+=6) {
+                        const y = w.y + w.amp*Math.sin(x*w.freq + t/2000*w.speed + w.phase);
+                        bgCtx.lineTo(x,y);
+                    }
+                    bgCtx.lineTo(W,H); bgCtx.closePath(); bgCtx.fill();
+                });
+                // bioluminescent particles
+                this._particles.forEach(p=>{
+                    p.y -= p.speed*0.3; p.x += p.drift + 0.5*Math.sin(t/2000+p.phase);
+                    if(p.y < -10) { p.y=H+10; p.x=Math.random()*W; }
+                    const a = 0.3 + 0.7*Math.abs(Math.sin(t/1500+p.phase));
+                    const gr = bgCtx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3);
+                    gr.addColorStop(0,`rgba(0,220,255,${a})`);
+                    gr.addColorStop(1,'transparent');
+                    bgCtx.fillStyle=gr; bgCtx.beginPath(); bgCtx.arc(p.x,p.y,p.r*3,0,Math.PI*2); bgCtx.fill();
+                    bgCtx.fillStyle=`rgba(180,255,255,${a})`; bgCtx.beginPath(); bgCtx.arc(p.x,p.y,p.r*0.5,0,Math.PI*2); bgCtx.fill();
+                });
+            }
+        },
+
+        void: {
+            name: 'VOID RIFT', icon: '🔮', desc: 'Space rifts — portals to the unknown',
+            color: '#B44CFF',
+            init() {
+                this._rifts = Array.from({length:5}, (_,i) => ({
+                    x: W*(0.1+0.2*i), y: H*(0.2+0.15*(i%3)),
+                    rx: 60+Math.random()*80, ry: 20+Math.random()*30,
+                    angle: Math.random()*Math.PI, speed: 0.2+Math.random()*0.2,
+                    phase: Math.random()*Math.PI*2,
+                    c: ['150,50,255','100,0,200','180,80,255','80,0,180','200,100,255'][i]
+                }));
+                this._sparks = Array.from({length:60}, () => ({
+                    x: Math.random()*W, y: Math.random()*H,
+                    vx: (Math.random()-0.5)*1.5, vy: (Math.random()-0.5)*1.5,
+                    life: Math.random(), maxLife: 0.5+Math.random()*1.5,
+                    r: 1+Math.random()*2
+                }));
+            },
+            draw(t) {
+                bgCtx.fillStyle='#03000a'; bgCtx.fillRect(0,0,W,H);
+                // rifts
+                this._rifts.forEach(r=>{
+                    r.angle += r.speed*0.005;
+                    const a = 0.06 + 0.04*Math.sin(t/1500+r.phase);
+                    bgCtx.save();
+                    bgCtx.translate(r.x,r.y); bgCtx.rotate(r.angle);
+                    // outer glow
+                    const og = bgCtx.createRadialGradient(0,0,0,0,0,r.rx*1.5);
+                    og.addColorStop(0,`rgba(${r.c},${a*0.8})`);
+                    og.addColorStop(0.6,`rgba(${r.c},${a*0.2})`);
+                    og.addColorStop(1,'transparent');
+                    bgCtx.fillStyle=og; bgCtx.beginPath(); bgCtx.ellipse(0,0,r.rx*1.5,r.ry*2,0,0,Math.PI*2); bgCtx.fill();
+                    // core rift
+                    bgCtx.fillStyle=`rgba(${r.c},${a*3})`; bgCtx.beginPath(); bgCtx.ellipse(0,0,r.rx*0.3,r.ry*0.6,0,0,Math.PI*2); bgCtx.fill();
+                    bgCtx.strokeStyle=`rgba(${r.c},${a*4})`; bgCtx.lineWidth=1.5;
+                    bgCtx.beginPath(); bgCtx.ellipse(0,0,r.rx,r.ry,0,0,Math.PI*2); bgCtx.stroke();
+                    bgCtx.restore();
+                });
+                // sparks drift toward rifts
+                this._sparks.forEach(s=>{
+                    s.life += 0.005;
+                    if(s.life > s.maxLife) { s.life=0; s.x=Math.random()*W; s.y=Math.random()*H; }
+                    s.x += s.vx*0.5; s.y += s.vy*0.5;
+                    const prog = s.life/s.maxLife;
+                    const a = prog < 0.2 ? prog/0.2 : prog > 0.8 ? (1-prog)/0.2 : 1;
+                    bgCtx.fillStyle=`rgba(200,130,255,${a*0.5})`;
+                    bgCtx.beginPath(); bgCtx.arc(s.x,s.y,s.r,0,Math.PI*2); bgCtx.fill();
+                });
+            }
+        },
+
+        desert: {
+            name: 'SAND STORM', icon: '🏜️', desc: 'Desert sandstorm — force of nature',
+            color: '#FFB320',
+            init() {
+                this._dunes = Array.from({length:6}, (_,i) => ({
+                    y: H*0.5+i*H*0.09, amp: 30+i*15, freq: 0.003-i*0.0003,
+                    speed: 0.15-i*0.015, phase: Math.random()*Math.PI*2,
+                    a: 0.06-i*0.005
+                }));
+                this._sand = Array.from({length:150}, () => ({
+                    x: Math.random()*W, y: Math.random()*H,
+                    speed: 2+Math.random()*5, len: 3+Math.random()*12,
+                    a: 0.05+Math.random()*0.2, vy: (Math.random()-0.5)*0.5
+                }));
+            },
+            draw(t) {
+                bgCtx.fillStyle='#060400'; bgCtx.fillRect(0,0,W,H);
+                // warm horizon glow
+                const hg = bgCtx.createLinearGradient(0,H*0.3,0,H);
+                hg.addColorStop(0,'transparent');
+                hg.addColorStop(0.5,'rgba(180,90,0,0.08)');
+                hg.addColorStop(1,'rgba(200,120,0,0.15)');
+                bgCtx.fillStyle=hg; bgCtx.fillRect(0,H*0.3,W,H*0.7);
+                // dune layers
+                this._dunes.forEach(d=>{
+                    bgCtx.fillStyle=`rgba(200,140,30,${d.a})`;
+                    bgCtx.beginPath(); bgCtx.moveTo(0,H);
+                    for(let x=0;x<=W;x+=6) {
+                        const y = d.y + d.amp*Math.sin(x*d.freq + t/3000*d.speed + d.phase);
+                        bgCtx.lineTo(x,y);
+                    }
+                    bgCtx.lineTo(W,H); bgCtx.closePath(); bgCtx.fill();
+                });
+                // blowing sand particles
+                this._sand.forEach(s=>{
+                    s.x += s.speed; s.y += s.vy;
+                    if(s.x > W+20) { s.x=-20; s.y=Math.random()*H; }
+                    bgCtx.strokeStyle=`rgba(220,170,80,${s.a})`;
+                    bgCtx.lineWidth=0.7;
+                    bgCtx.beginPath(); bgCtx.moveTo(s.x,s.y); bgCtx.lineTo(s.x-s.len,s.y-s.vy*2); bgCtx.stroke();
+                });
+            }
+        }
+    };
+
+    // ── animation loop ──────────────────────────────────────
+    let _bgLastFrame = 0;
+    const BG_FPS = 24, BG_MS = 1000/BG_FPS;
+    let activeTheme = THEMES[currentThemeId] || THEMES.nexus;
+    if(activeTheme.init) activeTheme.init();
+
+    function bgLoop(ts) {
+        animId = requestAnimationFrame(bgLoop);
+        if(ts - _bgLastFrame < BG_MS) return;
+        _bgLastFrame = ts;
+        bgCtx.clearRect(0,0,W,H);
+        if(activeTheme && activeTheme.draw) activeTheme.draw(ts);
+    }
+    bgLoop(0);
+
+    // ── public API ──────────────────────────────────────────
+    window.openBgThemes = function() {
+        const overlay = document.getElementById('bg-theme-overlay');
+        overlay.style.display = 'flex';
+        renderBgGrid();
+    };
+    window.closeBgThemes = function() {
+        document.getElementById('bg-theme-overlay').style.display = 'none';
+        try { sfx.click(); } catch(e){}
+    };
+
+    function applyBgTheme(id) {
+        currentThemeId = id;
+        window._bgThemeId = id; // tell main draw loop
+        localStorage.setItem(BG_KEY, id);
+        activeTheme = THEMES[id] || THEMES.nexus;
+        resize();
+        if(activeTheme.init) activeTheme.init();
+        const btn = document.getElementById('bg-nav-btn');
+        if(btn) btn.style.borderColor = activeTheme.color+'88';
+        try { sfx.click(); } catch(e){}
+    }
+
+    // ── preview thumbnails (tiny canvas per card) ───────────
+    let previewAnims = {};
+    function stopPreviews() {
+        Object.values(previewAnims).forEach(id => cancelAnimationFrame(id));
+        previewAnims = {};
+    }
+
+    function renderBgGrid() {
+        stopPreviews();
+        const grid = document.getElementById('bg-themes-grid');
+        if(!grid) return;
+        grid.innerHTML = '';
+
+        Object.entries(THEMES).forEach(([id, th]) => {
+            const card = document.createElement('div');
+            card.className = 'bg-theme-card' + (id === currentThemeId ? ' active' : '');
+
+            // preview canvas
+            const prev = document.createElement('canvas');
+            prev.width  = 200;
+            prev.height = 125;
+            card.appendChild(prev);
+
+            // badge
+            const badge = document.createElement('div');
+            badge.className = 'bg-active-badge';
+            badge.innerText = '✦ ACTIVE';
+            card.appendChild(badge);
+
+            // info
+            const info = document.createElement('div');
+            info.className = 'bg-theme-info';
+            info.innerHTML = `<div class="bg-theme-name">${th.icon} ${th.name}</div><div class="bg-theme-desc">${th.desc}</div>`;
+            card.appendChild(info);
+
+            card.onclick = () => {
+                document.querySelectorAll('.bg-theme-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                applyBgTheme(id);
+            };
+
+            grid.appendChild(card);
+
+            // start mini preview loop
+            const pCtx = prev.getContext('2d');
+            const miniTh = Object.create(th);
+            miniTh.draw = function(t2) {
+                // scale down the full draw to preview canvas
+                pCtx.save();
+                pCtx.scale(prev.width/W, prev.height/H);
+                const origCtx = bgCtx;
+                // redirect draws to pCtx
+                th.draw.call({
+                    _stars: miniTh._stars, _nebula: miniTh._nebula,
+                    _bands: miniTh._bands, _buildings: miniTh._buildings,
+                    _rain: miniTh._rain, _waves: miniTh._waves,
+                    _particles: miniTh._particles, _rifts: miniTh._rifts,
+                    _sparks: miniTh._sparks, _dunes: miniTh._dunes,
+                    _sand: miniTh._sand, _blobs: miniTh._blobs
+                }, t2);
+                pCtx.restore();
+            };
+
+            // simpler: draw directly on pCtx using a scaled proxy
+            const scaleX = prev.width / W, scaleY = prev.height / H;
+            let prevTheme = buildMiniTheme(id, prev.width, prev.height);
+
+            let prevLast = 0;
+            function prevLoop(ts2) {
+                previewAnims[id] = requestAnimationFrame(prevLoop);
+                if(ts2 - prevLast < 80) return; // ~12fps for previews
+                prevLast = ts2;
+                pCtx.clearRect(0,0,prev.width,prev.height);
+                if(prevTheme && prevTheme.draw) prevTheme.draw(ts2);
+            }
+            prevLoop(0);
+        });
+    }
+
+    // Build a mini version of each theme for preview cards
+    function buildMiniTheme(id, pw, ph) {
+        const t = {};
+        switch(id) {
+            case 'nexus':
+                t.draw = (ts) => {
+                    pDraw(pw,ph,(c,W2,H2)=>{
+                        c.fillStyle='#000'; c.fillRect(0,0,W2,H2);
+                        const p2=0.015+0.008*Math.sin(ts/2000), g2=15;
+                        c.strokeStyle=`rgba(162,228,243,${p2})`; c.lineWidth=0.5;
+                        for(let x=0;x<W2+g2;x+=g2){c.beginPath();c.moveTo(x,0);c.lineTo(x,H2);c.stroke();}
+                        for(let y=0;y<H2+g2;y+=g2){c.beginPath();c.moveTo(0,y);c.lineTo(W2,y);c.stroke();}
+                    });
+                }; break;
+            case 'space':
+                const sStars = Array.from({length:60},()=>({x:Math.random()*pw,y:Math.random()*ph,r:Math.random()*1.5+0.2,phase:Math.random()*Math.PI*2,speed:Math.random()*0.08+0.01}));
+                t.draw = (ts) => {
+                    pDraw(pw,ph,(c,W2,H2)=>{
+                        c.fillStyle='#000'; c.fillRect(0,0,W2,H2);
+                        const nb=c.createRadialGradient(W2*0.5,H2*0.4,0,W2*0.5,H2*0.4,W2*0.5);
+                        nb.addColorStop(0,'rgba(80,50,160,0.12)'); nb.addColorStop(1,'transparent');
+                        c.fillStyle=nb; c.fillRect(0,0,W2,H2);
+                        sStars.forEach(s=>{
+                            const a=0.4+0.6*Math.abs(Math.sin(ts*s.speed+s.phase));
+                            c.globalAlpha=a; c.fillStyle='#fff'; c.beginPath(); c.arc(s.x,s.y,s.r,0,Math.PI*2); c.fill();
+                        }); c.globalAlpha=1;
+                    });
+                }; break;
+            case 'aurora':
+                t.draw = (ts) => {
+                    pDraw(pw,ph,(c,W2,H2)=>{
+                        c.fillStyle='#000'; c.fillRect(0,0,W2,H2);
+                        [[0,255,136],[0,180,255],[180,60,255]].forEach((col,i)=>{
+                            const g2=c.createLinearGradient(0,H2*0.2,0,H2*0.8);
+                            const a=0.06+0.04*Math.sin(ts/2000+i*1.5);
+                            g2.addColorStop(0,'transparent'); g2.addColorStop(0.5,`rgba(${col},${a})`); g2.addColorStop(1,'transparent');
+                            c.fillStyle=g2;
+                            c.beginPath(); c.moveTo(0,H2);
+                            for(let x=0;x<=W2;x+=4){ c.lineTo(x, H2*0.3+H2*0.15*i+20*Math.sin(x*0.05+ts/1500+i)); }
+                            c.lineTo(W2,H2); c.closePath(); c.fill();
+                        });
+                    });
+                }; break;
+            case 'cyber':
+                const cBuildings = Array.from({length:14},(_,i)=>({x:i*(pw/14),w:pw/14*0.85,h:20+Math.random()*ph*0.6,color:['#FF3366','#A2E4F3','#B44CFF'][i%3]}));
+                t.draw = (ts) => {
+                    pDraw(pw,ph,(c,W2,H2)=>{
+                        c.fillStyle='#000'; c.fillRect(0,0,W2,H2);
+                        cBuildings.forEach(b=>{ c.fillStyle='#0a0a12'; c.fillRect(b.x,H2-b.h,b.w,b.h); c.strokeStyle=b.color+'55'; c.lineWidth=0.5; c.strokeRect(b.x,H2-b.h,b.w,b.h); });
+                    });
+                }; break;
+            case 'lava':
+                const lBlobs = Array.from({length:6},()=>({x:Math.random()*pw,y:ph*0.6+Math.random()*ph*0.4,r:20+Math.random()*40,phase:Math.random()*Math.PI*2,c:[255,80+Math.round(Math.random()*80),0]}));
+                t.draw = (ts) => {
+                    pDraw(pw,ph,(c,W2,H2)=>{
+                        c.fillStyle='#0a0000'; c.fillRect(0,0,W2,H2);
+                        const lb=c.createLinearGradient(0,H2*0.6,0,H2); lb.addColorStop(0,'rgba(180,40,0,0.3)'); lb.addColorStop(1,'rgba(255,100,0,0.15)');
+                        c.fillStyle=lb; c.fillRect(0,H2*0.6,W2,H2*0.4);
+                        lBlobs.forEach(b=>{ const a=0.08+0.05*Math.sin(ts/800+b.phase),pulse=1+0.15*Math.sin(ts/800+b.phase); const bg2=c.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r*pulse); bg2.addColorStop(0,`rgba(${b.c},${a*2})`); bg2.addColorStop(1,'transparent'); c.fillStyle=bg2; c.beginPath(); c.arc(b.x,b.y,b.r*pulse,0,Math.PI*2); c.fill(); });
+                    });
+                }; break;
+            case 'ocean':
+                const oPart = Array.from({length:30},()=>({x:Math.random()*pw,y:Math.random()*ph,r:1+Math.random()*2,speed:0.3+Math.random()*0.6,phase:Math.random()*Math.PI*2}));
+                t.draw = (ts) => {
+                    pDraw(pw,ph,(c,W2,H2)=>{
+                        c.fillStyle='#000610'; c.fillRect(0,0,W2,H2);
+                        [[0,150,255,0.04],[0,100,200,0.03]].forEach(([r,g2,b,a],i)=>{ const wg=c.createLinearGradient(0,H2*(0.3+i*0.15),0,H2); wg.addColorStop(0,'transparent'); wg.addColorStop(1,`rgba(${r},${g2},${b},${a})`); c.fillStyle=wg; c.fillRect(0,0,W2,H2); });
+                        oPart.forEach(p=>{ p.y-=p.speed*0.3; if(p.y<0){p.y=ph;} const a=0.4+0.6*Math.abs(Math.sin(ts/1500+p.phase)); const gr2=c.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3); gr2.addColorStop(0,`rgba(0,220,255,${a})`); gr2.addColorStop(1,'transparent'); c.fillStyle=gr2; c.beginPath(); c.arc(p.x,p.y,p.r*3,0,Math.PI*2); c.fill(); });
+                    });
+                }; break;
+            case 'void':
+                const vRifts = Array.from({length:3},(_,i)=>({x:pw*(0.2+0.3*i),y:ph*(0.3+0.2*(i%2)),rx:25+Math.random()*25,ry:8+Math.random()*10,angle:Math.random()*Math.PI,phase:Math.random()*Math.PI*2,c:['150,50,255','100,0,200','180,80,255'][i]}));
+                t.draw = (ts) => {
+                    pDraw(pw,ph,(c,W2,H2)=>{
+                        c.fillStyle='#03000a'; c.fillRect(0,0,W2,H2);
+                        vRifts.forEach(r=>{ r.angle+=0.005; const a=0.1+0.05*Math.sin(ts/1500+r.phase); c.save(); c.translate(r.x,r.y); c.rotate(r.angle); const og2=c.createRadialGradient(0,0,0,0,0,r.rx*1.5); og2.addColorStop(0,`rgba(${r.c},${a*0.8})`); og2.addColorStop(1,'transparent'); c.fillStyle=og2; c.beginPath(); c.ellipse(0,0,r.rx*1.5,r.ry*2,0,0,Math.PI*2); c.fill(); c.restore(); });
+                    });
+                }; break;
+            case 'desert':
+                const dDunes = Array.from({length:4},(_,i)=>({y:ph*0.4+i*ph*0.15,amp:10+i*8,freq:0.015-i*0.002,speed:0.15,phase:Math.random()*Math.PI*2,a:0.08-i*0.01}));
+                const dSand = Array.from({length:50},()=>({x:Math.random()*pw,y:Math.random()*ph,speed:1+Math.random()*3,len:3+Math.random()*8,a:0.1+Math.random()*0.2}));
+                t.draw = (ts) => {
+                    pDraw(pw,ph,(c,W2,H2)=>{
+                        c.fillStyle='#060400'; c.fillRect(0,0,W2,H2);
+                        const hg2=c.createLinearGradient(0,H2*0.3,0,H2); hg2.addColorStop(0,'transparent'); hg2.addColorStop(1,'rgba(180,100,0,0.12)'); c.fillStyle=hg2; c.fillRect(0,0,W2,H2);
+                        dDunes.forEach(d=>{ c.fillStyle=`rgba(200,140,30,${d.a})`; c.beginPath(); c.moveTo(0,H2); for(let x=0;x<=W2;x+=4){ c.lineTo(x, d.y+d.amp*Math.sin(x*d.freq+ts/3000*d.speed+d.phase)); } c.lineTo(W2,H2); c.closePath(); c.fill(); });
+                        dSand.forEach(s=>{ s.x+=s.speed; if(s.x>W2+10){s.x=-10;} c.strokeStyle=`rgba(220,170,80,${s.a})`; c.lineWidth=0.5; c.beginPath(); c.moveTo(s.x,s.y); c.lineTo(s.x-s.len,s.y); c.stroke(); });
+                    });
+                }; break;
+        }
+        return t;
+    }
+
+    // helper: draw on a specific canvas context
+    function pDraw(pw, ph, fn) {
+        // get the canvas context of the current card being rendered
+        // We use a trick: find the active preview canvas from the grid
+        // Actually, each mini-theme closes over its own pCtx — handled in buildMiniTheme
+        // This is called from within the closure so we need the ctx passed differently.
+        // Simpler: each miniTheme stores its ctx. Let's just call fn with a placeholder.
+        // The real implementation uses the pCtx closure from renderBgGrid above.
+    }
+
+    // Re-implement buildMiniTheme with explicit canvas context
+    window._buildMiniThemeFull = function(id, c, pw, ph) {
+        switch(id) {
+            case 'nexus': return (ts)=>{ c.fillStyle='#000'; c.fillRect(0,0,pw,ph); const g2=15,p2=0.02+0.01*Math.sin(ts/2000); c.strokeStyle=`rgba(162,228,243,${p2})`; c.lineWidth=0.5; for(let x=0;x<pw+g2;x+=g2){c.beginPath();c.moveTo(x,0);c.lineTo(x,ph);c.stroke();} for(let y=0;y<ph+g2;y+=g2){c.beginPath();c.moveTo(0,y);c.lineTo(pw,y);c.stroke();} };
+            case 'space': { const ss=Array.from({length:50},()=>({x:Math.random()*pw,y:Math.random()*ph,r:Math.random()*1.5+0.2,p:Math.random()*Math.PI*2,s:Math.random()*0.08+0.01})); return (ts)=>{ c.fillStyle='#000'; c.fillRect(0,0,pw,ph); const nb=c.createRadialGradient(pw*0.5,ph*0.4,0,pw*0.5,ph*0.4,pw*0.5); nb.addColorStop(0,'rgba(80,50,160,0.15)'); nb.addColorStop(1,'transparent'); c.fillStyle=nb; c.fillRect(0,0,pw,ph); ss.forEach(s=>{ const a=0.4+0.6*Math.abs(Math.sin(ts*s.s+s.p)); c.globalAlpha=a; c.fillStyle='#fff'; c.beginPath(); c.arc(s.x,s.y,s.r,0,Math.PI*2); c.fill(); }); c.globalAlpha=1; }; }
+            case 'aurora': return (ts)=>{ c.fillStyle='#000'; c.fillRect(0,0,pw,ph); [[0,255,136],[0,180,255],[180,60,255]].forEach((col,i)=>{ const g2=c.createLinearGradient(0,ph*0.1,0,ph*0.9); const a=0.07+0.04*Math.sin(ts/2000+i*1.5); g2.addColorStop(0,'transparent'); g2.addColorStop(0.5,`rgba(${col},${a})`); g2.addColorStop(1,'transparent'); c.fillStyle=g2; c.beginPath(); c.moveTo(0,ph); for(let x=0;x<=pw;x+=4){ c.lineTo(x,ph*0.25+ph*0.12*i+15*Math.sin(x*0.08+ts/1500+i)); } c.lineTo(pw,ph); c.closePath(); c.fill(); }); };
+            case 'cyber': { const cb=Array.from({length:14},(_,i)=>({x:i*(pw/14),w:pw/14*0.85,h:15+Math.random()*ph*0.65,col:['#FF3366','#A2E4F3','#B44CFF'][i%3]})); return (ts)=>{ c.fillStyle='#000'; c.fillRect(0,0,pw,ph); cb.forEach(b=>{ c.fillStyle='#0a0a12'; c.fillRect(b.x,ph-b.h,b.w,b.h); c.strokeStyle=b.col+'55'; c.lineWidth=0.5; c.strokeRect(b.x,ph-b.h,b.w,b.h); const rg=c.createLinearGradient(0,ph*0.5,0,ph); rg.addColorStop(0,'rgba(180,0,60,0.1)'); rg.addColorStop(1,'transparent'); c.fillStyle=rg; c.fillRect(0,ph*0.5,pw,ph*0.5); }); }; }
+            case 'lava': { const lb=Array.from({length:6},()=>({x:Math.random()*pw,y:ph*0.5+Math.random()*ph*0.5,r:15+Math.random()*30,p:Math.random()*Math.PI*2,c:[255,80+Math.round(Math.random()*80),0]})); return (ts)=>{ c.fillStyle='#0a0000'; c.fillRect(0,0,pw,ph); const lg=c.createLinearGradient(0,ph*0.6,0,ph); lg.addColorStop(0,'rgba(180,40,0,0.3)'); lg.addColorStop(1,'rgba(255,100,0,0.15)'); c.fillStyle=lg; c.fillRect(0,ph*0.6,pw,ph*0.4); lb.forEach(b=>{ const a=0.1+0.06*Math.sin(ts/800+b.p),pulse=1+0.15*Math.sin(ts/800+b.p); const bg2=c.createRadialGradient(b.x,b.y,0,b.x,b.y,b.r*pulse); bg2.addColorStop(0,`rgba(${b.c},${a*2.5})`); bg2.addColorStop(1,'transparent'); c.fillStyle=bg2; c.beginPath(); c.arc(b.x,b.y,b.r*pulse,0,Math.PI*2); c.fill(); }); }; }
+            case 'ocean': { const op=Array.from({length:25},()=>({x:Math.random()*pw,y:Math.random()*ph,r:1+Math.random()*2,s:0.3+Math.random()*0.5,p:Math.random()*Math.PI*2})); return (ts)=>{ c.fillStyle='#000610'; c.fillRect(0,0,pw,ph); op.forEach(p=>{ p.y-=p.s*0.3; if(p.y<0)p.y=ph; const a=0.5+0.5*Math.abs(Math.sin(ts/1500+p.p)); const gr2=c.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3); gr2.addColorStop(0,`rgba(0,220,255,${a})`); gr2.addColorStop(1,'transparent'); c.fillStyle=gr2; c.beginPath(); c.arc(p.x,p.y,p.r*3,0,Math.PI*2); c.fill(); }); }; }
+            case 'void': { const vr=Array.from({length:3},(_,i)=>({x:pw*(0.2+0.3*i),y:ph*(0.3+0.2*(i%2)),rx:20+Math.random()*20,ry:6+Math.random()*8,a:0,p:Math.random()*Math.PI*2,col:['150,50,255','100,0,200','180,80,255'][i]})); return (ts)=>{ c.fillStyle='#03000a'; c.fillRect(0,0,pw,ph); vr.forEach(r=>{ r.a+=0.01; const a=0.12+0.06*Math.sin(ts/1500+r.p); c.save(); c.translate(r.x,r.y); c.rotate(r.a); const og2=c.createRadialGradient(0,0,0,0,0,r.rx*1.5); og2.addColorStop(0,`rgba(${r.col},${a*0.9})`); og2.addColorStop(1,'transparent'); c.fillStyle=og2; c.beginPath(); c.ellipse(0,0,r.rx*1.5,r.ry*2,0,0,Math.PI*2); c.fill(); c.restore(); }); }; }
+            case 'desert': { const dd=Array.from({length:4},(_,i)=>({y:ph*0.4+i*ph*0.14,amp:8+i*6,freq:0.018-i*0.002,s:0.15,p:Math.random()*Math.PI*2,a:0.09-i*0.01})); const ds=Array.from({length:40},()=>({x:Math.random()*pw,y:Math.random()*ph,s:1+Math.random()*3,l:3+Math.random()*7,a:0.1+Math.random()*0.2})); return (ts)=>{ c.fillStyle='#060400'; c.fillRect(0,0,pw,ph); const hg2=c.createLinearGradient(0,ph*0.4,0,ph); hg2.addColorStop(0,'transparent'); hg2.addColorStop(1,'rgba(180,100,0,0.12)'); c.fillStyle=hg2; c.fillRect(0,0,pw,ph); dd.forEach(d=>{ c.fillStyle=`rgba(200,140,30,${d.a})`; c.beginPath(); c.moveTo(0,ph); for(let x=0;x<=pw;x+=4){ c.lineTo(x,d.y+d.amp*Math.sin(x*d.freq+ts/3000*d.s+d.p)); } c.lineTo(pw,ph); c.closePath(); c.fill(); }); ds.forEach(s=>{ s.x+=s.s; if(s.x>pw+10)s.x=-10; c.strokeStyle=`rgba(220,170,80,${s.a})`; c.lineWidth=0.5; c.beginPath(); c.moveTo(s.x,s.y); c.lineTo(s.x-s.l,s.y); c.stroke(); }); }; }
+            default: return (ts)=>{ c.fillStyle='#000'; c.fillRect(0,0,pw,ph); };
+        }
+    };
+
+    // Re-render grid using proper context closures
+    window.openBgThemes = function() {
+        document.getElementById('bg-theme-overlay').style.display = 'flex';
+        const grid = document.getElementById('bg-themes-grid');
+        grid.innerHTML = '';
+        stopPreviews();
+
+        Object.entries(THEMES).forEach(([id, th]) => {
+            const card = document.createElement('div');
+            card.className = 'bg-theme-card' + (id === currentThemeId ? ' active' : '');
+
+            const prev = document.createElement('canvas');
+            prev.width = 200; prev.height = 125;
+            card.appendChild(prev);
+
+            const badge = document.createElement('div');
+            badge.className = 'bg-active-badge'; badge.innerText = '✦ ACTIVE';
+            card.appendChild(badge);
+
+            const info = document.createElement('div');
+            info.className = 'bg-theme-info';
+            info.innerHTML = `<div class="bg-theme-name">${th.icon} ${th.name}</div><div class="bg-theme-desc">${th.desc}</div>`;
+            card.appendChild(info);
+
+            card.onclick = () => {
+                document.querySelectorAll('.bg-theme-card').forEach(c2 => c2.classList.remove('active'));
+                card.classList.add('active');
+                applyBgTheme(id);
+            };
+            grid.appendChild(card);
+
+            // Start preview animation with proper ctx
+            const pCtx = prev.getContext('2d');
+            const drawFn = window._buildMiniThemeFull(id, pCtx, prev.width, prev.height);
+            let prevLast2 = 0;
+            function prevLoop2(ts2) {
+                previewAnims[id] = requestAnimationFrame(prevLoop2);
+                if(ts2 - prevLast2 < 80) return;
+                prevLast2 = ts2;
+                pCtx.clearRect(0,0,prev.width,prev.height);
+                drawFn(ts2);
+            }
+            prevLoop2(0);
+        });
+    };
+
+    // Init nav button glow
+    const btn = document.getElementById('bg-nav-btn');
+    if(btn) btn.style.borderColor = (THEMES[currentThemeId]?.color || '#A2E4F3') + '88';
+
+})();
+</script>
 </body>
 </html>
