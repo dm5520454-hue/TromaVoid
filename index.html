@@ -900,7 +900,57 @@
         /* Adjust level roadmap bottom position */
         #level-roadmap { bottom: 65px; }
 
-        /* ========== PROGRESS PAGE ========== */
+        /* ========== ANTI-PROCRASTINATION: LOST TIME ========== */
+        #lost-time-widget {
+            position: fixed;
+            top: 140px;
+            right: 20px;
+            z-index: 18;
+            background: rgba(0,0,0,0.88);
+            border: 1.5px solid rgba(255,51,102,0.6);
+            border-radius: 8px;
+            padding: 10px 16px;
+            text-align: center;
+            backdrop-filter: blur(8px);
+            transition: all 0.4s ease;
+            box-shadow: 0 0 20px rgba(255,51,102,0.15);
+            min-width: 130px;
+            display: none;
+        }
+        #lost-time-widget.visible {
+            display: block;
+            animation: lostTimePulse 2s ease-in-out infinite;
+        }
+        @keyframes lostTimePulse {
+            0%,100% { box-shadow: 0 0 15px rgba(255,51,102,0.2); border-color: rgba(255,51,102,0.5); }
+            50% { box-shadow: 0 0 35px rgba(255,51,102,0.5); border-color: rgba(255,51,102,0.9); }
+        }
+        #lost-time-label {
+            font-size: 8px;
+            color: rgba(255,51,102,0.7);
+            letter-spacing: 2px;
+            margin-bottom: 3px;
+        }
+        #lost-time-val {
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--danger);
+            text-shadow: 0 0 15px var(--danger);
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+        #lost-time-msg {
+            font-size: 8px;
+            color: rgba(255,51,102,0.6);
+            letter-spacing: 1px;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* prog card for lost time */
+        .prog-card.danger-red::before { background: var(--danger); }
+
+
         #progress-overlay {
             position: fixed;
             inset: 0;
@@ -2342,6 +2392,13 @@
     </div>
 </div>
 
+<!-- ANTI-PROCRASTINATION: Lost Time Widget -->
+<div id="lost-time-widget">
+    <div id="lost-time-label">⚠ LOST_TIME</div>
+    <div id="lost-time-val">0 MIN</div>
+    <div id="lost-time-msg">خسرت من يومك</div>
+</div>
+
 <!-- ORIGINAL: Achievement Popup -->
 <div id="achievement-popup">
     <div class="achievement-title">ACHIEVEMENT UNLOCKED</div>
@@ -2810,6 +2867,11 @@
             <div class="prog-card-val" id="pg-streak">0</div>
             <div class="prog-card-label">DAY_STREAK</div>
         </div>
+        <div class="prog-card danger-red" style="grid-column: span 2; border-color: rgba(255,51,102,0.4);">
+            <div class="prog-card-icon">⏳</div>
+            <div class="prog-card-val" id="pg-lost-today" style="color:var(--danger);text-shadow:0 0 15px var(--danger);">0</div>
+            <div class="prog-card-label" style="color:rgba(255,51,102,0.7);">TODAY_LOST_MINUTES</div>
+        </div>
     </div>
 
     <div class="prog-section-title">◈ LAST 7 DAYS — STUDY MINUTES</div>
@@ -2888,7 +2950,11 @@
         dailyChallenges: [], challengesCompleted: [],
         totalTasksCompleted: 0,
         // PROGRESS PAGE: daily log {date: minutes}
-        dailyLog: {}, levelHistory: []
+        dailyLog: {}, levelHistory: [],
+        // ANTI-PROCRASTINATION: lost time tracking
+        lostTimeStart: null,      // متى بدأ العداد
+        todayLostMinutes: 0,      // دقايق ضايعة النهارده
+        dailyLostLog: {}          // سجل الدقايق الضايعة لكل يوم
     };
 
     const ranks = ["SHADOW", "INITIATE", "OPERATIVE", "BREACHER", "ENFORCER", "VANGUARD", "PHANTOM", "ASSASSIN", "SPECTRE", "ELITE_AGENT", "WARLORD", "OVERLORD", "ARCHITECT", "SYSTEM_GHOST", "GOD_MODE"];
@@ -3010,21 +3076,23 @@
         weatherCanvas.width = innerWidth;
         weatherCanvas.height = innerHeight;
         weatherParticles = [];
-        for(let i = 0; i < 80; i++) {
+        for(let i = 0; i < 40; i++) {
             weatherParticles.push({
                 x: Math.random() * innerWidth,
                 y: Math.random() * innerHeight,
-                speed: 0.5 + Math.random() * 2,
+                speed: 0.5 + Math.random() * 1.5,
                 length: 10 + Math.random() * 20,
-                opacity: 0.05 + Math.random() * 0.15,
+                opacity: 0.04 + Math.random() * 0.10,
                 char: String.fromCharCode(0x30A0 + Math.random() * 96)
             });
         }
     }
 
-    function drawWeather() {
+    let _wLastTime = 0;
+    function drawWeather(ts) {
+        if(ts - _wLastTime < 80) { requestAnimationFrame(drawWeather); return; } // ~12fps
+        _wLastTime = ts;
         weatherCtx.clearRect(0, 0, innerWidth, innerHeight);
-        const iceColor = getComputedStyle(document.documentElement).getPropertyValue('--ice').trim() || '#A2E4F3';
         weatherParticles.forEach(p => {
             weatherCtx.font = '12px Courier New';
             weatherCtx.fillStyle = `rgba(162,228,243,${p.opacity})`;
@@ -3073,7 +3141,7 @@
         if(dashBest) dashBest.innerText = `x${state.comboBest || 0}`;
     }
 
-    setInterval(updateDashboard, 2000);
+    setInterval(updateDashboard, 3000);
     function checkStreak() {
         const today = getAppDate();
         if(state.lastLoginDate !== today) {
@@ -3623,9 +3691,9 @@
         draw();
     }
 
-    // PERFORMANCE FIX: Cap draw loop at ~20 FPS to reduce CPU/GPU load
+    // PERFORMANCE: Cap draw loop at ~15 FPS to reduce CPU/GPU load
     let _lastDrawTime = 0;
-    const _TARGET_FPS = 20;
+    const _TARGET_FPS = 15;
     const _FRAME_MS = 1000 / _TARGET_FPS;
     function draw() {
         const now = performance.now();
@@ -3637,9 +3705,12 @@
         } else {
             ctx.fillStyle='#000'; ctx.fillRect(0,0,innerWidth,innerHeight);
         }
-        ctx.strokeStyle='rgba(162,228,243,0.05)'; ctx.lineWidth=1;
-        for(let i=0;i<innerWidth;i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,innerHeight); ctx.stroke(); }
-        for(let i=0;i<innerHeight;i+=50) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(innerWidth,i); ctx.stroke(); }
+        // Grid lines: only draw every 2nd frame to reduce GPU load
+        if(Math.floor(_lastDrawTime / _FRAME_MS) % 2 === 0) {
+            ctx.strokeStyle='rgba(162,228,243,0.04)'; ctx.lineWidth=1;
+            for(let i=0;i<innerWidth;i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,innerHeight); ctx.stroke(); }
+            for(let i=0;i<innerHeight;i+=50) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(innerWidth,i); ctx.stroke(); }
+        }
         const pulse = Math.sin(Date.now()/300)*4;
 
         if(state.isBreaching && state.activeIdx!==null) {
@@ -3803,7 +3874,7 @@
         saveToStorage();
     }
 
-    document.addEventListener('visibilitychange', ()=>{ if(document.hidden) { saveToStorage(); saveDailyLog(); } });
+    document.addEventListener('visibilitychange', ()=>{ if(document.hidden) { saveToStorage(); saveDailyLog(); try{ flushLostTimer(); }catch(e){} } });
     window.addEventListener('resize', ()=>{
         const dpr = devicePixelRatio||1, oldW=canvas.width/dpr, oldH=canvas.height/dpr;
         canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr; ctx.scale(dpr,dpr);
@@ -4073,17 +4144,22 @@
         };
     })();
 
-    // Sound toggle button (bottom left)
+    // Sound toggle button — injected into bottom nav
     const soundToggleBtn = document.createElement('div');
-    soundToggleBtn.className = 'control-btn';
-    soundToggleBtn.style.cssText = 'bottom:25px;left:20px;';
-    soundToggleBtn.innerText = '[ 🔊 SFX ]';
+    soundToggleBtn.className = 'nav-btn';
+    soundToggleBtn.innerText = '🔊 SFX';
     soundToggleBtn.onclick = () => {
         const on = sfx.toggle();
-        soundToggleBtn.innerText = on ? '[ 🔊 SFX ]' : '[ 🔇 SFX ]';
+        soundToggleBtn.innerText = on ? '🔊 SFX' : '🔇 SFX';
         if(on) sfx.click();
     };
-    document.body.appendChild(soundToggleBtn);
+    const bottomNav = document.getElementById('bottom-nav');
+    if(bottomNav) {
+        const sep = document.createElement('div');
+        sep.className = 'nav-separator';
+        bottomNav.appendChild(sep);
+        bottomNav.appendChild(soundToggleBtn);
+    }
 
     // Unlock audio context on first interaction
     document.addEventListener('click', () => {
@@ -4110,6 +4186,9 @@
         document.getElementById('pg-tasks').innerText = state.totalTasksCompleted;
         document.getElementById('pg-level').innerText = state.level;
         document.getElementById('pg-streak').innerText = state.streak;
+        // Lost time today
+        const lostEl = document.getElementById('pg-lost-today');
+        if(lostEl) lostEl.innerText = Math.floor(((state.dailyLostLog && state.dailyLostLog[today]) || 0) / 60);
 
         // Last 7 days bars — كل يوم بيبدأ من 5am
         const histEl = document.getElementById('pg-history-bars');
@@ -4124,6 +4203,7 @@
         const maxMins = Math.max(1, ...days.map(d => state.dailyLog[d.key] || 0));
         days.forEach(d => {
             const mins = state.dailyLog[d.key] || 0;
+            const lostMins = Math.floor(((state.dailyLostLog && state.dailyLostLog[d.key]) || 0) / 60);
             const pct = Math.round((mins / maxMins) * 100);
             const row = document.createElement('div');
             row.className = 'day-row';
@@ -4132,7 +4212,7 @@
                 <div class="day-bar-wrap">
                     <div class="day-bar-fill" style="width:0%" data-pct="${pct}"></div>
                 </div>
-                <div class="day-val">${mins}<span style="font-size:8px;opacity:0.6"> MIN</span></div>`;
+                <div class="day-val">${mins}<span style="font-size:8px;opacity:0.6"> MIN</span>${lostMins > 0 ? `<span style="font-size:9px;color:var(--danger);opacity:0.8;margin-left:4px;">-${lostMins}</span>` : ''}</div>`;
             histEl.appendChild(row);
         });
         // Animate bars after render
@@ -4644,7 +4724,8 @@
             const mins=state.dailyLog[key]||0;
             weekTotal+=mins;
             if(mins>bestDayMins){bestDayMins=mins;bestDay=d.toLocaleDateString('en',{weekday:'long'});}
-            days.push({label:d.toLocaleDateString('en',{weekday:'short'}),mins});
+            const lost=(state.dailyLostLog&&state.dailyLostLog[key])||0;
+            days.push({label:d.toLocaleDateString('en',{weekday:'short'}),mins,lost});
         }
         const avg=Math.round(weekTotal/7);
         const grade=weekTotal>=300?'S':weekTotal>=200?'A':weekTotal>=120?'B':weekTotal>=60?'C':'D';
@@ -4673,7 +4754,7 @@
                 <div style="flex:1;height:14px;background:rgba(162,228,243,0.07);border-radius:7px;overflow:hidden;">
                     <div style="height:100%;width:${weekTotal>0?Math.round(d.mins/Math.max(bestDayMins,1)*100):0}%;background:linear-gradient(90deg,var(--ice),#fff);border-radius:7px;transition:width 0.8s ease;"></div>
                 </div>
-                <div style="font-size:11px;font-weight:bold;color:var(--gold);width:50px;text-align:right;">${d.mins} <span style="font-size:8px;opacity:0.6">MIN</span></div>
+                <div style="font-size:11px;font-weight:bold;color:var(--gold);width:70px;text-align:right;">${d.mins} <span style="font-size:8px;opacity:0.6">MIN</span>${d.lost>0?` <span style="color:var(--danger);font-size:9px;">-${d.lost}</span>`:''}</div>
             </div>`).join('')}
         </div>
         <div class="weekly-card">
@@ -4857,7 +4938,8 @@
                 comboChain:state.comboChain, comboBest:state.comboBest, secretCodesUsed:state.secretCodesUsed,
                 totalTasksCompleted:state.totalTasksCompleted, dailyLog:state.dailyLog||{},
                 levelHistory:state.levelHistory||[], subjectLog:state.subjectLog||{},
-                hourLog:state.hourLog||{}, myRoomCode:state.myRoomCode||null
+                hourLog:state.hourLog||{}, myRoomCode:state.myRoomCode||null,
+                dailyLostLog:state.dailyLostLog||{}
             }
         };
         localStorage.setItem('tromavoid_premium_v5', JSON.stringify(data));
@@ -4877,6 +4959,7 @@
                 state.subjectLog = p.progression.subjectLog||{};
                 state.hourLog = p.progression.hourLog||{};
                 state.myRoomCode = p.progression.myRoomCode||null;
+                state.dailyLostLog = p.progression.dailyLostLog||{};
             }
         }
         // Notification request after 10 seconds
@@ -5045,30 +5128,30 @@ function project(x3, y3, z3) {
 }
 
 // ── Star particles (deep 3D starfield) ─────────────────
-const STAR_COUNT = 280;
+const STAR_COUNT = 120;
 const stars = Array.from({ length: STAR_COUNT }, () => ({
     x: (Math.random() - 0.5) * PW * 3,
     y: (Math.random() - 0.5) * PH * 3,
     z: Math.random() * FOV * 2,
-    speed: 0.4 + Math.random() * 0.8,
+    speed: 0.4 + Math.random() * 0.6,
     color: ['#A2E4F3','#B44CFF','#00FF88','#FFD700','#FF3366','#ffffff'][Math.floor(Math.random()*6)],
-    size: 0.5 + Math.random() * 1.5,
+    size: 0.5 + Math.random() * 1.2,
     trail: [],
-    trailLen: Math.floor(Math.random() * 6 + 3),
+    trailLen: Math.floor(Math.random() * 4 + 2),
 }));
 
 // ── Floating data orbs (3D spheres) ────────────────────
-const ORB_COUNT = 22;
+const ORB_COUNT = 12;
 const orbs = Array.from({ length: ORB_COUNT }, (_, i) => ({
     x: (Math.random() - 0.5) * PW * 2,
     y: (Math.random() - 0.5) * PH * 2,
     z: (Math.random() - 0.5) * FOV * 1.5,
-    vx: (Math.random() - 0.5) * 0.3,
-    vy: (Math.random() - 0.5) * 0.3,
-    vz: (Math.random() - 0.5) * 0.5,
-    r: 3 + Math.random() * 8,
+    vx: (Math.random() - 0.5) * 0.25,
+    vy: (Math.random() - 0.5) * 0.25,
+    vz: (Math.random() - 0.5) * 0.4,
+    r: 3 + Math.random() * 7,
     phase: Math.random() * Math.PI * 2,
-    speed: 0.3 + Math.random() * 0.5,
+    speed: 0.3 + Math.random() * 0.4,
     color: ['#A2E4F3','#B44CFF','#00FF88','#FFD700','#FF3366'][i % 5],
     pulseSpeed: 0.02 + Math.random() * 0.03,
 }));
@@ -5077,32 +5160,32 @@ const orbs = Array.from({ length: ORB_COUNT }, (_, i) => ({
 const CONNECTIONS = [];
 for (let i = 0; i < ORB_COUNT; i++) {
     for (let j = i + 1; j < ORB_COUNT; j++) {
-        if (Math.random() < 0.12) {
+        if (Math.random() < 0.10) {
             CONNECTIONS.push([i, j]);
         }
     }
 }
 
 // ── Floating hex rings (3D rotation) ───────────────────
-const HEX_COUNT = 8;
+const HEX_COUNT = 5;
 const hexRings = Array.from({ length: HEX_COUNT }, () => ({
     x: (Math.random() - 0.5) * PW * 2.5,
     y: (Math.random() - 0.5) * PH * 2.5,
     z: (Math.random() - 0.5) * FOV,
-    radius: 30 + Math.random() * 60,
+    radius: 30 + Math.random() * 55,
     rotX: Math.random() * Math.PI * 2,
     rotY: Math.random() * Math.PI * 2,
-    rotSpeedX: (Math.random() - 0.5) * 0.008,
-    rotSpeedY: (Math.random() - 0.5) * 0.01,
+    rotSpeedX: (Math.random() - 0.5) * 0.007,
+    rotSpeedY: (Math.random() - 0.5) * 0.009,
     color: ['rgba(162,228,243','rgba(180,76,255','rgba(0,255,136'][Math.floor(Math.random()*3)],
-    alpha: 0.06 + Math.random() * 0.1,
+    alpha: 0.05 + Math.random() * 0.08,
     pulsePhase: Math.random() * Math.PI * 2,
 }));
 
 // ── Main 3D render loop ─────────────────────────────────
 let p3Time = 0;
 let p3Last = 0;
-const P3_FPS = 30, P3_MS = 1000 / P3_FPS;
+const P3_FPS = 18, P3_MS = 1000 / P3_FPS;
 
 function renderP3(ts) {
     requestAnimationFrame(renderP3);
@@ -5941,11 +6024,716 @@ networkCanvas.style.boxShadow = `
         });
     };
 
-    // Init nav button glow
+    // ============================================================
+    // ANTI-PROCRASTINATION SHIELD — Lost Time Timer (v3 - clean)
+    // بيعدّ كل ثانية مفيش فيها مهمة شغالة
+    // ============================================================
+    const LOST_LOG_KEY = 'tromavoid_lost_log_v1';
+
+    // تحميل السجل عند البداية
+    (function() {
+        try {
+            const raw = localStorage.getItem(LOST_LOG_KEY);
+            state.dailyLostLog = raw ? JSON.parse(raw) : {};
+        } catch(e) { state.dailyLostLog = {}; }
+    })();
+
+    const LOST_START_KEY = 'tromavoid_lost_start_v1';
+
+    function _saveLostLog() {
+        try { localStorage.setItem(LOST_LOG_KEY, JSON.stringify(state.dailyLostLog || {})); } catch(e) {}
+        // حفظ وقت بداية العداد عشان يستمر لما التطبيق يقفل ويفتح
+        try {
+            if(state.lostTimeStart !== null) {
+                localStorage.setItem(LOST_START_KEY, String(state.lostTimeStart));
+            } else {
+                localStorage.removeItem(LOST_START_KEY);
+            }
+        } catch(e) {}
+    }
+
+    // الوقت الضائع الكلي اليوم (ثواني)
+    function getLostSecsNow() {
+        const today = getAppDate();
+        const base = (state.dailyLostLog && state.dailyLostLog[today]) || 0;
+        if(state.lostTimeStart === null) return base;
+        return base + Math.floor((Date.now() - state.lostTimeStart) / 1000);
+    }
+
+    // وقف العداد وحفظ الوقت (لما مهمة تبدأ)
+    function pauseLostTimer() {
+        if(state.lostTimeStart === null) return;
+        const today = getAppDate();
+        const elapsed = Math.floor((Date.now() - state.lostTimeStart) / 1000);
+        if(!state.dailyLostLog) state.dailyLostLog = {};
+        state.dailyLostLog[today] = ((state.dailyLostLog[today]) || 0) + elapsed;
+        state.lostTimeStart = null;
+        _saveLostLog();
+        try { localStorage.removeItem(LOST_START_KEY); } catch(e) {}
+    }
+
+    // شغّل العداد من جديد (لما مهمة تخلص)
+    function resumeLostTimer() {
+        state.lostTimeStart = Date.now();
+    }
+
+    // flush بدون وقف (للحفظ الدوري)
+    function flushLostTimer() {
+        if(state.lostTimeStart === null || state.isBreaching) return;
+        const today = getAppDate();
+        const elapsed = Math.floor((Date.now() - state.lostTimeStart) / 1000);
+        if(!state.dailyLostLog) state.dailyLostLog = {};
+        state.dailyLostLog[today] = ((state.dailyLostLog[today]) || 0) + elapsed;
+        state.lostTimeStart = Date.now(); // يبدأ من جديد
+        _saveLostLog(); // هيحفظ الـ start key جوّا
+    }
+
+    // Day rollover
+    let _lostDay = getAppDate();
+    function _checkLostRollover() {
+        const today = getAppDate();
+        if(today === _lostDay) return;
+        if(state.lostTimeStart !== null) {
+            const elapsed = Math.floor((Date.now() - state.lostTimeStart) / 1000);
+            if(!state.dailyLostLog) state.dailyLostLog = {};
+            state.dailyLostLog[_lostDay] = ((state.dailyLostLog[_lostDay]) || 0) + elapsed;
+            _saveLostLog();
+            state.lostTimeStart = Date.now();
+        }
+        _lostDay = today;
+    }
+
+    // Widget render
+    function updateLostWidget() {
+        const widget = document.getElementById('lost-time-widget');
+        const valEl  = document.getElementById('lost-time-val');
+        const msgEl  = document.getElementById('lost-time-msg');
+        if(!widget || !valEl) return;
+        const secs = getLostSecsNow();
+        if(secs < 5) { widget.classList.remove('visible'); return; }
+        widget.classList.add('visible');
+        const mm = Math.floor(secs / 60);
+        const ss = secs % 60;
+        const hh = Math.floor(mm / 60);
+        const rm = mm % 60;
+        valEl.innerText = hh > 0
+            ? hh + 'h ' + String(rm).padStart(2,'0') + 'm'
+            : String(mm).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
+        let msg;
+        if(mm < 5)       msg = 'ابدأ الآن!';
+        else if(mm < 15) msg = mm + ' دقيقة بلا هدف';
+        else if(mm < 30) msg = '⚠ ' + mm + ' دقيقة ضائعة';
+        else if(mm < 60) msg = '🚨 ' + mm + ' دقيقة هدر!';
+        else             msg = '💀 ' + hh + 'h' + rm + 'm — يوم ضعيف!';
+        if(msgEl) msgEl.innerText = msg;
+    }
+
+    // Ticker: كل ثانية
+    setInterval(() => {
+        _checkLostRollover();
+        if(!state.isBreaching) {
+            if(state.lostTimeStart === null) state.lostTimeStart = Date.now();
+            updateLostWidget();
+        }
+    }, 1000);
+
+    // حفظ كل 60 ثانية
+    setInterval(() => { if(!state.isBreaching) flushLostTimer(); }, 60000);
+
+    // Patch engage: وقف لما مهمة تبدأ
+    const _pe_lost = engage;
+    engage = async function() {
+        pauseLostTimer();
+        updateLostWidget();
+        return await _pe_lost.apply(this, arguments);
+    };
+
+    // Patch completeNode: شغّل لما مهمة تخلص
+    const _pcn_lost = completeNode;
+    completeNode = function() {
+        _pcn_lost.apply(this, arguments);
+        setTimeout(() => { resumeLostTimer(); updateLostWidget(); }, 300);
+    };
+
+    // Patch abandonTask: شغّل لما مهمة تتهجر
+    const _pat_lost = abandonTask;
+    abandonTask = function() {
+        _pat_lost.apply(this, arguments);
+        setTimeout(() => { resumeLostTimer(); updateLostWidget(); }, 300);
+    };
+
+    // حفظ لما التاب يتقفل
+    window.addEventListener('beforeunload', flushLostTimer);
+    document.addEventListener('visibilitychange', () => { if(document.hidden) flushLostTimer(); });
+
+    // Init: ابدأ فوراً لو مفيش مهمة — أو استرجع وقت سابق لو التطبيق كان مقفول
+    if(!state.isBreaching) {
+        const savedStart = (() => { try { const v = localStorage.getItem(LOST_START_KEY); return v ? parseInt(v, 10) : null; } catch(e) { return null; } })();
+        if(savedStart && !isNaN(savedStart)) {
+            // كان التطبيق مقفول والعداد كان شغال — نكمّل من نفس الوقت
+            state.lostTimeStart = savedStart;
+        } else {
+            state.lostTimeStart = Date.now();
+        }
+    }
+    updateLostWidget();
+
     const btn = document.getElementById('bg-nav-btn');
     if(btn) btn.style.borderColor = (THEMES[currentThemeId]?.color || '#A2E4F3') + '88';
 
 })();
 </script>
+
+<!-- ================================================================
+     INTELLIGENCE SYSTEM — NEW FEATURES
+     Shadow Clone | DNA Report | Debt Meter | Heat Death | Task DNA
+     ================================================================ -->
+<style>
+/* Intel Panel */
+#intel-panel {
+    position: fixed;
+    bottom: 92px;
+    right: 12px;
+    z-index: 12;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    pointer-events: all;
+}
+#intel-toggle-btn {
+    position: fixed;
+    bottom: 132px;
+    right: 12px;
+    z-index: 13;
+    background: rgba(0,0,0,0.8);
+    border: 1px solid rgba(162,228,243,0.2);
+    color: rgba(162,228,243,0.5);
+    font-family: 'Courier New', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    padding: 3px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+#intel-toggle-btn:hover { color: var(--ice); border-color: var(--ice); }
+.intel-card {
+    background: rgba(0,0,0,0.82);
+    border: 1px solid rgba(162,228,243,0.12);
+    border-radius: 8px;
+    padding: 8px 11px;
+    min-width: 155px;
+    max-width: 155px;
+    backdrop-filter: blur(6px);
+}
+.intel-lbl {
+    font-size: 7px;
+    letter-spacing: 3px;
+    color: rgba(162,228,243,0.25);
+    font-weight: 900;
+    margin-bottom: 5px;
+}
+/* DNA Report */
+#dna-report-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.97);
+    z-index: 160;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(20px);
+    animation: overlayFadeIn 0.4s ease;
+}
+/* Heat Death */
+#heat-death-overlay {
+    position: fixed; inset: 0;
+    background: rgba(18,0,0,0.98);
+    z-index: 310;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(20px);
+}
+/* DNA Pattern popup */
+#dna-pattern-popup {
+    position: fixed;
+    top: 145px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    background: rgba(0,0,0,0.95);
+    border: 1.5px solid rgba(180,76,255,0.45);
+    border-radius: 12px;
+    padding: 18px 26px;
+    text-align: center;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 0 40px rgba(180,76,255,0.25);
+    min-width: 300px;
+    display: none;
+    animation: overlayFadeIn 0.4s ease;
+}
+</style>
+
+<!-- INTEL TOGGLE -->
+<button id="intel-toggle-btn" onclick="tvToggleIntel()">◈ INTEL</button>
+
+<!-- INTEL PANEL -->
+<div id="intel-panel" style="display:none;">
+
+    <!-- Shadow Clone: Yesterday vs Today -->
+    <div class="intel-card" id="shadow-clone-card">
+        <div class="intel-lbl">👻 SHADOW_CLONE</div>
+        <div style="margin-bottom:4px;">
+            <div style="display:flex;justify-content:space-between;font-size:8px;color:#444;margin-bottom:2px;">
+                <span>أمس</span><span id="tv-yest-m">0m</span>
+            </div>
+            <div style="height:3px;background:#111;border-radius:2px;">
+                <div id="tv-bar-yest" style="height:100%;background:rgba(180,76,255,0.5);border-radius:2px;width:0%;transition:width 0.8s;"></div>
+            </div>
+        </div>
+        <div>
+            <div style="display:flex;justify-content:space-between;font-size:8px;color:#555;margin-bottom:2px;">
+                <span>اليوم</span><span id="tv-today-m">0m</span>
+            </div>
+            <div style="height:3px;background:#111;border-radius:2px;">
+                <div id="tv-bar-today" style="height:100%;background:var(--ice);border-radius:2px;width:0%;transition:width 0.8s;"></div>
+            </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+            <span id="tv-delta" style="font-size:12px;font-weight:900;color:var(--success);">+0m</span>
+            <span id="tv-shadow-lbl" style="font-size:8px;color:#555;">—</span>
+        </div>
+    </div>
+
+    <!-- Debt Meter -->
+    <div class="intel-card" id="debt-card">
+        <div class="intel-lbl">💸 DEBT_METER</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span id="tv-debt-val" style="font-size:17px;font-weight:900;color:var(--warning);">0m</span>
+            <span id="tv-debt-msg" style="font-size:8px;color:var(--success);">خالص ✓</span>
+        </div>
+        <div style="font-size:7px;color:#333;margin-top:3px;">الهدف اليومي: 60 دقيقة</div>
+    </div>
+
+    <!-- Procrastination Streak -->
+    <div class="intel-card" id="proc-card">
+        <div class="intel-lbl">🚫 WEAK_DAYS</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span id="tv-proc-val" style="font-size:17px;font-weight:900;color:var(--danger);">0</span>
+            <span style="font-size:8px;color:#444;">يوم ضعيف</span>
+        </div>
+    </div>
+
+    <!-- Task DNA Insight -->
+    <div class="intel-card" style="border-color:rgba(180,76,255,0.18);">
+        <div class="intel-lbl">🧬 TASK_DNA</div>
+        <div id="tv-dna-insight" style="font-size:8px;color:rgba(162,228,243,0.4);line-height:1.7;">
+            أنجز 5 مهام<br>لتحليل نمطك
+        </div>
+    </div>
+</div>
+
+<!-- DNA DAILY REPORT -->
+<div id="dna-report-overlay">
+    <div style="text-align:center;max-width:400px;padding:28px 20px;">
+        <div style="font-size:10px;letter-spacing:6px;color:rgba(162,228,243,0.3);margin-bottom:18px;">🧬 DAILY DNA REPORT — أمس</div>
+        <div id="dna-grade" style="font-size:72px;font-weight:900;letter-spacing:8px;margin-bottom:6px;line-height:1;">—</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0;">
+            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(162,228,243,0.08);border-radius:8px;padding:12px;text-align:center;">
+                <div id="dna-eff" style="font-size:22px;font-weight:900;color:var(--ice);">0%</div>
+                <div style="font-size:8px;color:#444;letter-spacing:2px;margin-top:3px;">كفاءة</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(162,228,243,0.08);border-radius:8px;padding:12px;text-align:center;">
+                <div id="dna-study" style="font-size:22px;font-weight:900;color:var(--success);">0m</div>
+                <div style="font-size:8px;color:#444;letter-spacing:2px;margin-top:3px;">ذاكرت</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(162,228,243,0.08);border-radius:8px;padding:12px;text-align:center;">
+                <div id="dna-lost" style="font-size:22px;font-weight:900;color:var(--danger);">0m</div>
+                <div style="font-size:8px;color:#444;letter-spacing:2px;margin-top:3px;">ضائع</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(162,228,243,0.08);border-radius:8px;padding:12px;text-align:center;">
+                <div id="dna-best" style="font-size:22px;font-weight:900;color:var(--gold);">0m</div>
+                <div style="font-size:8px;color:#444;letter-spacing:2px;margin-top:3px;">أفضل يوم</div>
+            </div>
+        </div>
+        <div id="dna-msg" style="font-size:13px;letter-spacing:2px;line-height:1.9;margin:18px 0;font-weight:bold;"></div>
+        <button onclick="closeDNAReport()" style="padding:13px 48px;background:transparent;border:1.5px solid rgba(162,228,243,0.25);color:var(--ice);border-radius:6px;cursor:pointer;font-size:11px;font-weight:900;letter-spacing:4px;font-family:'Courier New',monospace;transition:all 0.2s;" onmouseover="this.style.background='rgba(162,228,243,0.08)'" onmouseout="this.style.background='transparent'">ACKNOWLEDGED</button>
+    </div>
+</div>
+
+<!-- HEAT DEATH WARNING -->
+<div id="heat-death-overlay">
+    <div style="text-align:center;">
+        <div style="font-size:70px;margin-bottom:16px;animation:failPulse 0.9s infinite alternate;">🌡️</div>
+        <div style="font-size:26px;font-weight:900;letter-spacing:6px;color:var(--danger);text-shadow:0 0 50px var(--danger);margin-bottom:10px;">HEAT DEATH</div>
+        <div style="font-size:13px;letter-spacing:3px;color:rgba(255,51,102,0.65);margin-bottom:6px;">النظام في وضع الموت الحراري</div>
+        <div style="font-size:11px;color:#444;letter-spacing:2px;margin-bottom:36px;">ساعتان بلا نشاط — أين اختفيت؟</div>
+        <button onclick="dismissHeatDeath()" style="padding:15px 55px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:900;letter-spacing:4px;font-family:'Courier New',monospace;box-shadow:0 0 40px var(--danger);transition:all 0.2s;">أنا هنا — ابدأ الآن ⚔</button>
+    </div>
+</div>
+
+<!-- TASK DNA PATTERN POPUP -->
+<div id="dna-pattern-popup">
+    <div id="dna-pattern-msg"></div>
+    <button onclick="closeDNAPattern()" style="margin-top:12px;padding:7px 28px;background:transparent;border:1px solid rgba(180,76,255,0.35);color:var(--purple);border-radius:5px;cursor:pointer;font-size:9px;letter-spacing:3px;font-family:'Courier New',monospace;transition:all 0.2s;" onmouseover="this.style.background='rgba(180,76,255,0.1)'" onmouseout="this.style.background='transparent'">GOT IT</button>
+</div>
+
+<script>
+// ================================================================
+// INTELLIGENCE SYSTEM — Surgical Add-On
+// NO existing code modified | Reads localStorage directly
+// ================================================================
+(function() {
+    'use strict';
+
+    // ─── Storage keys ────────────────────────────────────────────
+    var K_DNA_RPT   = 'tv_dna_rpt_v1';
+    var K_PROC      = 'tv_proc_v1';
+    var K_DEBT      = 'tv_debt_v1';
+    var K_TASKS     = 'tv_tasks_v1';
+    var DAILY_GOAL  = 60; // minutes
+
+    // ─── Panel toggle ─────────────────────────────────────────────
+    window.tvToggleIntel = function() {
+        var p = document.getElementById('intel-panel');
+        if(!p) return;
+        var shown = p.style.display === 'flex' || p.style.display === '';
+        p.style.display = shown ? 'none' : 'flex';
+        if(!shown) {
+            updateShadowClone();
+            updateDebt();
+            renderProcWidget();
+        }
+    };
+    // Default: hidden (lightweight)
+    (function() {
+        var p = document.getElementById('intel-panel');
+        if(p) p.style.display = 'none';
+    })();
+
+    // ─── Date helper (mirrors getAppDate) ────────────────────────
+    function tvDate(off) {
+        var d = new Date();
+        if(d.getHours() < 5) d.setDate(d.getDate() - 1);
+        d.setDate(d.getDate() + (off || 0));
+        return d.toDateString();
+    }
+
+    // ─── localStorage readers ─────────────────────────────────────
+    function getDailyLog() {
+        try { return JSON.parse(localStorage.getItem('tromavoid_daily_log_v2')) || {}; }
+        catch(e) { return {}; }
+    }
+    function getLostLog() {
+        try { return JSON.parse(localStorage.getItem('tromavoid_lost_log_v1')) || {}; }
+        catch(e) { return {}; }
+    }
+    function getMain() {
+        try {
+            var r = localStorage.getItem('tromavoid_premium_v5');
+            return r ? JSON.parse(r) : null;
+        } catch(e) { return null; }
+    }
+    function getJ(key) {
+        try { return JSON.parse(localStorage.getItem(key)); }
+        catch(e) { return null; }
+    }
+    function setJ(key, val) {
+        try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+    }
+
+    function studyMins(date) { return getDailyLog()[date] || 0; }
+    function lostMins(date)  { return Math.floor((getLostLog()[date] || 0) / 60); }
+    function bestDay() {
+        var v = Object.values(getDailyLog());
+        return v.length ? Math.max.apply(null, v) : 0;
+    }
+    function el(id) { return document.getElementById(id); }
+    function setText(id, val) { var e = el(id); if(e) e.textContent = val; }
+
+    // ================================================================
+    // 1. DAILY DNA REPORT
+    // ================================================================
+    function buildDNA() {
+        var yest  = tvDate(-1);
+        var study = studyMins(yest);
+        var lost  = lostMins(yest);
+        var best  = bestDay();
+        var pct   = best > 0 ? Math.round(study / best * 100) : 0;
+        var grade, col, msg;
+        if(pct >= 90)      { grade='S+'; col='#FFD700'; msg='أنت في أفضل حالاتك. لا أحد يقف في وجهك.'; }
+        else if(pct >= 70) { grade='A';  col='#00FF88'; msg='أداء جيد — لكن أفضل نسخة منك هتحاسبك.'; }
+        else if(pct >= 50) { grade='B';  col='#A2E4F3'; msg='متوسط. الوقت مش بيرجع. اتحرك.'; }
+        else if(pct >= 30) { grade='C';  col='#FFB320'; msg=lost + ' دقيقة ضائعة أمس — ليه؟'; }
+        else if(study > 0) { grade='D';  col='#FF3366'; msg='كنت موجود بس مكنتش حاضر.'; }
+        else               { grade='F';  col='#FF3366'; msg='مكنتش موجود. كل يوم بيتحسب.'; }
+        return { study: study, lost: lost, pct: pct, grade: grade, col: col, msg: msg, best: best };
+    }
+
+    function showDNAReport() {
+        var r = buildDNA();
+        var ov = el('dna-report-overlay');
+        if(!ov) return;
+        var g = el('dna-grade');
+        if(g) { g.textContent = r.grade; g.style.color = r.col; g.style.textShadow = '0 0 30px ' + r.col; }
+        setText('dna-eff',   r.pct   + '%');
+        setText('dna-study', r.study + 'm');
+        setText('dna-lost',  r.lost  + 'm');
+        setText('dna-best',  r.best  + 'm');
+        var m = el('dna-msg');
+        if(m) { m.textContent = r.msg; m.style.color = r.col; }
+        ov.style.display = 'flex';
+        setJ(K_DNA_RPT, tvDate());
+    }
+
+    window.closeDNAReport = function() {
+        var ov = el('dna-report-overlay');
+        if(ov) ov.style.display = 'none';
+    };
+
+    function checkDNAReport() {
+        if((getJ(K_DNA_RPT) || '') !== tvDate()) {
+            setTimeout(showDNAReport, 2800);
+        }
+    }
+
+    // ================================================================
+    // 2. PROCRASTINATION STREAK
+    // ================================================================
+    function updateProcStreak() {
+        var yest = tvDate(-1);
+        var d = getJ(K_PROC) || { count: 0, last: null };
+        if(d.last !== yest) {
+            var study = studyMins(yest);
+            var lost  = lostMins(yest);
+            if(lost > study) d.count++;
+            else d.count = 0;
+            d.last = yest;
+            setJ(K_PROC, d);
+        }
+        renderProcWidget(d.count);
+    }
+
+    function renderProcWidget(count) {
+        var c = count !== undefined ? count : ((getJ(K_PROC) || {}).count || 0);
+        setText('tv-proc-val', c);
+        var card = el('proc-card');
+        if(card) card.style.opacity = c > 0 ? '1' : '0.4';
+    }
+
+    // ================================================================
+    // 3. SHADOW CLONE — اليوم vs أمس
+    // ================================================================
+    function updateShadowClone() {
+        var today = tvDate(0);
+        var yest  = tvDate(-1);
+        var todayM = studyMins(today);
+        // Add live timer progress
+        var sd = getMain();
+        if(sd && sd.timer && sd.timer.startTime) {
+            todayM += Math.floor(Math.max(0, (Date.now() - sd.timer.startTime) / 60000));
+        }
+        var yestM = studyMins(yest);
+        var maxM  = Math.max(yestM, todayM, 1);
+
+        setText('tv-today-m', todayM + 'm');
+        setText('tv-yest-m',  yestM  + 'm');
+
+        var diff = todayM - yestM;
+        var dEl = el('tv-delta');
+        if(dEl) {
+            dEl.textContent = (diff >= 0 ? '+' : '') + diff + 'm';
+            dEl.style.color = diff >= 0 ? 'var(--success)' : 'var(--danger)';
+        }
+        var lEl = el('tv-shadow-lbl');
+        if(lEl) {
+            if(diff > 0)       { lEl.textContent = 'تجاوزت أمس 🔥'; lEl.style.color = 'var(--success)'; }
+            else if(diff === 0){ lEl.textContent = 'مساوٍ لأمس ═';  lEl.style.color = 'var(--ice)'; }
+            else               { lEl.textContent = 'وراك أمس 👻';    lEl.style.color = 'var(--warning)'; }
+        }
+        var bt = el('tv-bar-today');
+        var by = el('tv-bar-yest');
+        if(bt) bt.style.width = Math.min(todayM / maxM * 100, 100) + '%';
+        if(by) by.style.width = Math.min(yestM  / maxM * 100, 100) + '%';
+    }
+
+    // ================================================================
+    // 4. DEBT METER
+    // ================================================================
+    function updateDebt() {
+        var yest = tvDate(-1);
+        var d = getJ(K_DEBT) || { total: 0, last: null };
+        if(d.last !== yest) {
+            var shortfall = Math.max(0, DAILY_GOAL - studyMins(yest));
+            d.total = Math.max(0, d.total + shortfall);
+            d.last  = yest;
+            setJ(K_DEBT, d);
+        }
+        // Reduce by today's surplus
+        var surplus = Math.max(0, studyMins(tvDate(0)) - DAILY_GOAL);
+        var display = Math.max(0, d.total - surplus);
+
+        var col, msg;
+        if(display === 0)       { col='var(--success)'; msg='خالص ✓'; }
+        else if(display <= 30)  { col='var(--ice)';    msg='دين بسيط 📋'; }
+        else if(display <= 60)  { col='var(--warning)'; msg='يتراكم ⚠'; }
+        else if(display <= 120) { col='var(--danger)';  msg='كبير 🚨'; }
+        else                    { col='var(--danger)';  msg='محيط بيك 💀'; }
+
+        var vEl = el('tv-debt-val');
+        var mEl = el('tv-debt-msg');
+        var cEl = el('debt-card');
+        if(vEl) { vEl.textContent = display + 'm'; vEl.style.color = col; }
+        if(mEl) { mEl.textContent = msg; mEl.style.color = col; }
+        if(cEl) { cEl.style.borderColor = display > 60 ? 'rgba(255,51,102,0.35)' : display > 0 ? 'rgba(255,179,32,0.25)' : 'rgba(0,255,136,0.25)'; }
+    }
+
+    // ================================================================
+    // 5. HEAT DEATH WARNING
+    // ================================================================
+    var _lastAct  = Date.now();
+    var _heatOn   = false;
+    var HEAT_MS   = 2 * 3600 * 1000; // 2 hours
+
+    function refreshAct() {
+        _lastAct = Date.now();
+        if(_heatOn) {
+            var ov = el('heat-death-overlay');
+            if(ov) ov.style.display = 'none';
+            _heatOn = false;
+        }
+    }
+
+    window.dismissHeatDeath = function() { refreshAct(); };
+
+    document.addEventListener('click',   refreshAct, { passive: true });
+    document.addEventListener('keydown', refreshAct, { passive: true });
+
+    setInterval(function() {
+        var sd = getMain();
+        if(sd && sd.timer) { _lastAct = Date.now(); return; } // active task = not idle
+        if(!_heatOn && Date.now() - _lastAct >= HEAT_MS) {
+            _heatOn = true;
+            var ov = el('heat-death-overlay');
+            if(ov) ov.style.display = 'flex';
+        }
+    }, 60000);
+
+    // ================================================================
+    // 6. TASK DNA — Fingerprint every completed task
+    // ================================================================
+    function getTasks() { return getJ(K_TASKS) || []; }
+    function saveTasks(arr) { setJ(K_TASKS, arr.slice(-60)); }
+
+    function recordTask(name, durMins) {
+        var h = new Date().getHours();
+        var period = h < 6 ? 'فجر' : h < 12 ? 'صباح' : h < 17 ? 'ظهر' : h < 21 ? 'مساء' : 'ليل';
+        var arr = getTasks();
+        arr.push({ name: name || '—', mins: durMins || 0, period: period });
+        saveTasks(arr);
+        analyzeTaskDNA(arr);
+    }
+
+    function analyzeTaskDNA(arr) {
+        if(arr.length < 5) return;
+
+        // Best period by total minutes
+        var periods = {};
+        arr.forEach(function(t) {
+            if(!periods[t.period]) periods[t.period] = { count: 0, total: 0 };
+            periods[t.period].count++;
+            periods[t.period].total += (t.mins || 0);
+        });
+        var bestP = Object.entries(periods).sort(function(a,b) { return b[1].total - a[1].total; })[0];
+
+        // Most frequent task keyword
+        var cats = {};
+        arr.forEach(function(t) {
+            var cat = (t.name || '').split(/[\s_\-]/)[0].toUpperCase();
+            if(cat) cats[cat] = (cats[cat] || 0) + 1;
+        });
+        var topCat = Object.entries(cats).sort(function(a,b) { return b[1]-a[1]; })[0];
+
+        var dnaEl = el('tv-dna-insight');
+        if(dnaEl && bestP) {
+            dnaEl.innerHTML = '⏰ ' + bestP[0] + '<br>🎯 ' + (topCat ? topCat[0] : '—')
+                + '<br><span style="color:#333;font-size:7px;">' + arr.length + ' مهمة محللة</span>';
+        }
+
+        // Show pattern popup every 10 tasks
+        if(arr.length % 10 === 0) {
+            showDNAPattern(bestP, topCat);
+        }
+    }
+
+    function showDNAPattern(bestP, topCat) {
+        var ov = el('dna-pattern-popup');
+        if(!ov || !bestP) return;
+        var msg = el('dna-pattern-msg');
+        if(msg) {
+            msg.innerHTML = '<div style="color:var(--gold);font-size:15px;letter-spacing:4px;margin-bottom:10px;">🧬 TASK DNA DECODED</div>'
+                + '<div style="color:var(--ice);font-size:11px;line-height:2.1;">'
+                + 'أشطر وقت عندك: <span style="color:var(--success)">' + bestP[0] + '</span><br>'
+                + 'مادتك الأساسية: <span style="color:var(--warning)">' + (topCat ? topCat[0] : '—') + '</span><br>'
+                + 'متوسط جلستك: <span style="color:var(--purple)">' + Math.round(bestP[1].total / bestP[1].count) + ' دقيقة</span>'
+                + '</div>';
+        }
+        ov.style.display = 'flex';
+    }
+
+    window.closeDNAPattern = function() {
+        var ov = el('dna-pattern-popup');
+        if(ov) ov.style.display = 'none';
+    };
+
+    // ── Task completion polling (reads localStorage, no state access) ──
+    var _prevCount = -1;
+    var _taskInFlight = null;
+
+    setInterval(function() {
+        var sd = getMain();
+        if(!sd) return;
+
+        // Detect task in progress
+        if(sd.timer && sd.timer.taskName && !_taskInFlight) {
+            _taskInFlight = {
+                name:    sd.timer.taskName,
+                durMins: Math.floor((sd.timer.duration || 0) / 60)
+            };
+        }
+        if(!sd.timer) _taskInFlight = null;
+
+        // Detect completion
+        var count = (sd.progression && sd.progression.totalTasksCompleted) || 0;
+        if(_prevCount >= 0 && count > _prevCount && _taskInFlight) {
+            recordTask(_taskInFlight.name, _taskInFlight.durMins);
+            _taskInFlight = null;
+        }
+        _prevCount = count;
+    }, 5000);
+
+    // ── Periodic lightweight UI refresh ──────────────────────────────
+    setInterval(function() {
+        var p = el('intel-panel');
+        if(!p || p.style.display === 'none') return; // don't update if hidden
+        updateShadowClone();
+        updateDebt();
+        renderProcWidget();
+    }, 30000);
+
+    // ── Init ─────────────────────────────────────────────────────────
+    setTimeout(function() {
+        updateProcStreak();
+        updateDebt();
+        updateShadowClone();
+        analyzeTaskDNA(getTasks());
+        checkDNAReport();
+    }, 2500);
+
+})();
+</script>
+
 </body>
 </html>
