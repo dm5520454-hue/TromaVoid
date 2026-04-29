@@ -7580,5 +7580,442 @@ function _showEnemyLevelUp(lvl, data) {
 })();
 </script>
 
+
+<!-- ============================================================ -->
+<!-- ██████╗ ██╗  ██╗ █████╗ ██╗     ██╗     ███████╗███╗   ██╗  -->
+<!-- ██╔════╝██║  ██║██╔══██╗██║     ██║     ██╔════╝████╗  ██║  -->
+<!-- ██║     ███████║███████║██║     ██║     █████╗  ██╔██╗ ██║  -->
+<!-- ██║     ██╔══██║██╔══██║██║     ██║     ██╔══╝  ██║╚██╗██║  -->
+<!-- ╚██████╗██║  ██║██║  ██║███████╗███████╗███████╗██║ ╚████║  -->
+<!--  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚═╝  ╚═══╝  -->
+<!-- Islamic Challenge Card System — 100 Challenges               -->
+<!-- ============================================================ -->
+
+<style>
+/* ===== CHALLENGE CARD OVERLAY ===== */
+#challenge-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(18px);
+    align-items: center;
+    justify-content: center;
+    animation: challengeFadeIn 0.4s ease;
+}
+@keyframes challengeFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+#challenge-card {
+    position: relative;
+    width: min(88vw, 380px);
+    border-radius: 22px;
+    background: linear-gradient(145deg, #0a0a14 0%, #080816 60%, #0d0d1a 100%);
+    border: 1.5px solid rgba(162,228,243,0.25);
+    box-shadow:
+        0 0 60px rgba(162,228,243,0.12),
+        0 0 120px rgba(180,76,255,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    padding: 36px 28px 28px;
+    text-align: center;
+    animation: cardSlideUp 0.45s cubic-bezier(0.34,1.56,0.64,1);
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+}
+@keyframes cardSlideUp {
+    from { transform: translateY(60px) scale(0.88); opacity: 0; }
+    to   { transform: translateY(0)    scale(1);    opacity: 1; }
+}
+
+/* Animated border shimmer */
+#challenge-card::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 22px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(162,228,243,0.5) 30%,
+        rgba(180,76,255,0.5) 60%,
+        transparent 100%
+    );
+    opacity: 0;
+    z-index: -1;
+    animation: borderShimmer 3s ease-in-out infinite;
+}
+@keyframes borderShimmer {
+    0%,100% { opacity: 0; }
+    50%      { opacity: 1; }
+}
+
+/* Top glow bar */
+#challenge-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 20%; right: 20%;
+    height: 2px;
+    border-radius: 0 0 4px 4px;
+    background: linear-gradient(90deg, transparent, rgba(162,228,243,0.8), transparent);
+    animation: topBarGlow 2s ease-in-out infinite alternate;
+}
+@keyframes topBarGlow {
+    from { opacity: 0.4; left: 30%; right: 30%; }
+    to   { opacity: 1;   left: 10%; right: 10%; }
+}
+
+.challenge-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(180,76,255,0.2), rgba(162,228,243,0.1));
+    border: 1px solid rgba(180,76,255,0.4);
+    border-radius: 20px;
+    padding: 4px 16px;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(180,76,255,0.9);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    font-weight: 900;
+}
+
+.challenge-emoji {
+    font-size: 52px;
+    display: block;
+    margin-bottom: 14px;
+    animation: emojiFloat 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(255,215,0,0.4));
+}
+@keyframes emojiFloat {
+    0%,100% { transform: translateY(0)   rotate(-3deg); }
+    50%      { transform: translateY(-6px) rotate(3deg); }
+}
+
+.challenge-title {
+    font-size: 11px;
+    letter-spacing: 5px;
+    color: rgba(162,228,243,0.5);
+    margin-bottom: 10px;
+    font-weight: 900;
+}
+
+.challenge-text {
+    font-size: 17px;
+    font-weight: 900;
+    color: #ffffff;
+    line-height: 1.65;
+    text-shadow: 0 0 30px rgba(162,228,243,0.3);
+    margin-bottom: 8px;
+    direction: rtl;
+    font-family: 'Courier New', monospace;
+}
+
+.challenge-duration {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(255,183,32,0.7);
+    margin-bottom: 24px;
+}
+
+.challenge-duration span {
+    color: var(--warning, #FFB320);
+    font-weight: 900;
+}
+
+.challenge-divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(162,228,243,0.2), transparent);
+    margin-bottom: 22px;
+}
+
+.challenge-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.challenge-btn-accept {
+    flex: 1;
+    padding: 13px 0;
+    border-radius: 10px;
+    border: 1.5px solid rgba(0,255,136,0.5);
+    background: rgba(0,255,136,0.08);
+    color: #00FF88;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    transition: all 0.22s ease;
+    text-transform: uppercase;
+}
+.challenge-btn-accept:hover {
+    background: rgba(0,255,136,0.18);
+    box-shadow: 0 0 22px rgba(0,255,136,0.25);
+    transform: translateY(-2px);
+}
+
+.challenge-btn-skip {
+    flex: 1;
+    padding: 13px 0;
+    border-radius: 10px;
+    border: 1.5px solid rgba(162,228,243,0.2);
+    background: rgba(162,228,243,0.04);
+    color: rgba(162,228,243,0.5);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    transition: all 0.22s ease;
+    text-transform: uppercase;
+}
+.challenge-btn-skip:hover {
+    background: rgba(162,228,243,0.1);
+    color: rgba(162,228,243,0.9);
+    transform: translateY(-2px);
+}
+
+.challenge-counter {
+    margin-top: 18px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: rgba(162,228,243,0.25);
+}
+</style>
+
+<!-- Challenge Card HTML -->
+<div id="challenge-overlay">
+    <div id="challenge-card">
+        <div class="challenge-badge">⚡ تحدي إسلامي</div>
+        <span class="challenge-emoji" id="ch-emoji">🌙</span>
+        <div class="challenge-title">// CHALLENGE_UNLOCKED //</div>
+        <div class="challenge-text" id="ch-text">اتحداك تستغفر ربنا 10 مرات</div>
+        <div class="challenge-duration">⏱ المدة: <span id="ch-duration">دقيقة واحدة</span></div>
+        <div class="challenge-divider"></div>
+        <div class="challenge-btns">
+            <button class="challenge-btn-accept" onclick="window.acceptChallenge()">✓ قبلت</button>
+            <button class="challenge-btn-skip"   onclick="window.skipChallenge()">← لاحقاً</button>
+        </div>
+        <div class="challenge-counter" id="ch-counter">تحدي #1 من 100</div>
+    </div>
+</div>
+
+<script>
+(function() {
+'use strict';
+
+// ─── 100 Islamic Challenges ───────────────────────────────────
+const CHALLENGES = [
+    { text: "اتحداك تستغفر ربنا 10 مرات من قلبك دلوقتي",           emoji: "🌿", duration: "دقيقة واحدة" },
+    { text: "اتحداك تقرأ سورة الفاتحة بتدبر وتأمل",                emoji: "📖", duration: "دقيقتين" },
+    { text: "اتحداك تصلي ركعتين لله تعالى دلوقتي",                 emoji: "🕌", duration: "3 دقايق" },
+    { text: "اتحداك تقول 'سبحان الله وبحمده' 33 مرة",              emoji: "✨", duration: "دقيقة واحدة" },
+    { text: "اتحداك تقرأ آية الكرسي بتمعن وفهم",                   emoji: "🌙", duration: "دقيقتين" },
+    { text: "اتحداك تصلي على النبي ﷺ 20 مرة",                      emoji: "💚", duration: "دقيقة واحدة" },
+    { text: "اتحداك تقرأ صفحة من القرآن الكريم",                   emoji: "📗", duration: "3 دقايق" },
+    { text: "اتحداك تدعو لوالديك بخير دلوقتي",                     emoji: "🤲", duration: "دقيقتين" },
+    { text: "اتحداك تقول 'الحمد لله' 100 مرة",                     emoji: "🌸", duration: "3 دقايق" },
+    { text: "اتحداك تتوضأ وتصلي تحية الوضوء",                      emoji: "💧", duration: "3 دقايق" },
+    { text: "اتحداك تتذكر 3 نعم من نعم الله عليك وتشكره",          emoji: "⭐", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ سورة الإخلاص 10 مرات",                   emoji: "🌟", duration: "دقيقتين" },
+    { text: "اتحداك تقول 'لا إله إلا الله' 50 مرة بخشوع",         emoji: "☀️", duration: "دقيقتين" },
+    { text: "اتحداك تدعو لأصدقائك وأحبابك بظهر الغيب",            emoji: "❤️", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ آخر 3 آيات من سورة البقرة",               emoji: "📜", duration: "3 دقايق" },
+    { text: "اتحداك تتصدق ولو بدعاء لشخص محتاج",                  emoji: "🎁", duration: "دقيقة واحدة" },
+    { text: "اتحداك تسبح 'سبحان الله العظيم' 33 مرة",              emoji: "🌿", duration: "دقيقة واحدة" },
+    { text: "اتحداك تقرأ سورة الكهف أو جزء منها",                  emoji: "📖", duration: "3 دقايق" },
+    { text: "اتحداك تحمد الله على نعمة الصحة والعقل",              emoji: "💙", duration: "دقيقتين" },
+    { text: "اتحداك تقول أذكار الصباح أو المساء",                  emoji: "🌅", duration: "3 دقايق" },
+    { text: "اتحداك تتوب لله على أي تقصير وتعزم على الاستمرار",    emoji: "🕊️", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ سورة يس أو تبدأ بها",                     emoji: "📗", duration: "3 دقايق" },
+    { text: "اتحداك تصلي على النبي ﷺ بكل صلاة تعرفها",             emoji: "🌹", duration: "دقيقتين" },
+    { text: "اتحداك تتأمل في آية 'وما خلقت الجن والإنس إلا ليعبدون'", emoji: "🔮", duration: "دقيقتين" },
+    { text: "اتحداك تقول 'بسم الله الرحمن الرحيم' قبل كل عمل",    emoji: "✍️", duration: "دقيقة واحدة" },
+    { text: "اتحداك تدعو الله أن يهديك ويثبتك على الحق",           emoji: "🤲", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ الأحاديث النبوية لمدة 3 دقايق",           emoji: "📚", duration: "3 دقايق" },
+    { text: "اتحداك تقول 'حسبي الله ونعم الوكيل' 10 مرات",         emoji: "🛡️", duration: "دقيقة واحدة" },
+    { text: "اتحداك تشكر الله على نعمة الإسلام والهداية",          emoji: "⭐", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ سورة الملك بتدبر",                        emoji: "👑", duration: "3 دقايق" },
+    { text: "اتحداك تتذكر الموت وتجدد نيتك في طاعة الله",          emoji: "🌙", duration: "دقيقتين" },
+    { text: "اتحداك تقول 'ربنا آتنا في الدنيا حسنة' الدعاء كامل",  emoji: "🌈", duration: "دقيقة واحدة" },
+    { text: "اتحداك تصلي 4 ركعات سنة الضحى",                       emoji: "🕌", duration: "3 دقايق" },
+    { text: "اتحداك تقول استغفار مئة مرة",                         emoji: "💧", duration: "3 دقايق" },
+    { text: "اتحداك تتأمل في خلق السماوات والأرض",                 emoji: "🌌", duration: "دقيقتين" },
+    { text: "اتحداك تدعو بدعاء سيد الاستغفار",                     emoji: "🌿", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ سورة الزلزلة وتتدبر معناها",              emoji: "📖", duration: "دقيقتين" },
+    { text: "اتحداك تنظر في المرآة وتقول 'اللهم حسّن خلقي كما حسّنت خلقي'", emoji: "🪞", duration: "دقيقة واحدة" },
+    { text: "اتحداك تقرأ سورة القيامة وتتدبر معناها",              emoji: "🔥", duration: "3 دقايق" },
+    { text: "اتحداك تدعو الله أن يرزقك القرآن الكريم شفيعاً",      emoji: "📗", duration: "دقيقتين" },
+    { text: "اتحداك تقول 'يا مقلب القلوب ثبت قلبي على دينك' 10 مرات", emoji: "💚", duration: "دقيقة واحدة" },
+    { text: "اتحداك تتلو سورة الرحمن بصوت هادئ",                   emoji: "🌸", duration: "3 دقايق" },
+    { text: "اتحداك تقرأ قصة نبي من القرآن الكريم",                emoji: "📜", duration: "3 دقايق" },
+    { text: "اتحداك تقول أذكار النوم قبل ما تأخد أي قيلولة",       emoji: "🌙", duration: "دقيقة واحدة" },
+    { text: "اتحداك تحفظ آية جديدة من القرآن الكريم",              emoji: "🧠", duration: "3 دقايق" },
+    { text: "اتحداك تتعلم معنى اسم من أسماء الله الحسنى",          emoji: "🌟", duration: "دقيقتين" },
+    { text: "اتحداك تقول 'اللهم إني أعوذ بك من الهم والحزن' 3 مرات", emoji: "🛡️", duration: "دقيقة واحدة" },
+    { text: "اتحداك تدعو لأمة الإسلام بالنصر والهداية",            emoji: "🌍", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ سورة الشمس بتدبر",                        emoji: "☀️", duration: "دقيقتين" },
+    { text: "اتحداك تصلي ركعتين شكراً لله على نعمة ما تمتلكه",     emoji: "🕌", duration: "3 دقايق" },
+    { text: "اتحداك تقول 'آمنت بالله وبما جاء عن الله على مراد الله' وتتأمل فيها", emoji: "🔮", duration: "دقيقتين" },
+    { text: "اتحداك تدعو بدعاء الكرب: 'لا إله إلا الله العظيم الحليم'", emoji: "⚡", duration: "دقيقة واحدة" },
+    { text: "اتحداك تقرأ سورة عبس وتتأمل فيها",                   emoji: "📖", duration: "دقيقتين" },
+    { text: "اتحداك تشكر ربنا على نعمة البصر والسمع",              emoji: "👁️", duration: "دقيقتين" },
+    { text: "اتحداك تقول 'الله أكبر' 34 مرة بخشوع",               emoji: "✨", duration: "دقيقتين" },
+    { text: "اتحداك تتفكر في نعمة العقل اللي وهبك الله إياها",     emoji: "🧠", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ دعاء ختم القرآن من قلبك",                emoji: "📗", duration: "دقيقتين" },
+    { text: "اتحداك تصلي على النبي ﷺ 100 مرة",                     emoji: "🌹", duration: "3 دقايق" },
+    { text: "اتحداك تقول سبحان الله وبحمده سبحان الله العظيم مئة مرة", emoji: "🌿", duration: "3 دقايق" },
+    { text: "اتحداك تتأمل في آية الكرسي كلمة بكلمة",              emoji: "🌙", duration: "3 دقايق" },
+    { text: "اتحداك تدعو لنفسك بالثبات على الإسلام حتى الممات",   emoji: "❤️", duration: "دقيقتين" },
+    { text: "اتحداك تتلو المعوذتين 3 مرات لطرد الوسواس",           emoji: "🛡️", duration: "دقيقة واحدة" },
+    { text: "اتحداك تقرأ سورة النبأ وتتفكر في يوم القيامة",        emoji: "🔥", duration: "3 دقايق" },
+    { text: "اتحداك تقول 'رب اشرح لي صدري ويسر لي أمري' بخشوع",   emoji: "🌈", duration: "دقيقة واحدة" },
+    { text: "اتحداك تدعو للمسلمين المستضعفين في كل مكان",          emoji: "🌍", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ سورة الضحى وتتدبر معناها الجميل",         emoji: "🌅", duration: "دقيقتين" },
+    { text: "اتحداك تتوضأ وأنت تفكر في معنى الطهارة الباطنة",      emoji: "💧", duration: "3 دقايق" },
+    { text: "اتحداك تقول أذكار دخول وخروج البيت لمدة يوم كامل",    emoji: "🏠", duration: "دقيقة واحدة" },
+    { text: "اتحداك تحفظ دعاء 'اللهم أعني على ذكرك وشكرك وحسن عبادتك'", emoji: "🤲", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ قصيدة مدح نبوي من قلبك",                 emoji: "🌹", duration: "3 دقايق" },
+    { text: "اتحداك تتأمل في آية 'فَإِنَّ مَعَ الْعُسْرِ يُسْرًا'",  emoji: "☀️", duration: "دقيقتين" },
+    { text: "اتحداك تقول 'لا حول ولا قوة إلا بالله' 100 مرة",      emoji: "⚡", duration: "3 دقايق" },
+    { text: "اتحداك تتلو سورة الفجر بتمعن وتأمل",                  emoji: "🌄", duration: "دقيقتين" },
+    { text: "اتحداك تشكر الله على نعمة الماء اللي تشربه",          emoji: "💧", duration: "دقيقة واحدة" },
+    { text: "اتحداك تدعو الله بدعاء موسى: 'رب إني لما أنزلت إليّ من خير فقير'", emoji: "🌿", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ سورة التين وتستخرج منها درساً",           emoji: "🍃", duration: "دقيقتين" },
+    { text: "اتحداك تصلي ركعتين صلاة التوبة بنية صادقة",           emoji: "🕌", duration: "3 دقايق" },
+    { text: "اتحداك تقول 'اللهم اهدني فيمن هديت' الدعاء كاملاً",  emoji: "🌟", duration: "دقيقتين" },
+    { text: "اتحداك تتلو سورة الإنسان أو جزء منها",                emoji: "📖", duration: "3 دقايق" },
+    { text: "اتحداك تفكر: ماذا سيكون أول سؤال في القبر؟",          emoji: "🔮", duration: "دقيقتين" },
+    { text: "اتحداك تدعو الله أن يرزقك الفردوس الأعلى",           emoji: "🌙", duration: "دقيقتين" },
+    { text: "اتحداك تقول 'اللهم بارك لنا فيما رزقتنا' وتشكر على أكلك", emoji: "🍽️", duration: "دقيقة واحدة" },
+    { text: "اتحداك تتأمل في خلق جسمك وتحمد الله على هذه النعمة",  emoji: "❤️", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ سورة الأعلى بصوت خاشع",                  emoji: "📜", duration: "دقيقتين" },
+    { text: "اتحداك تدعو ربك أن يجعلك من أهل القرآن",              emoji: "📗", duration: "دقيقتين" },
+    { text: "اتحداك تقول 'يا حي يا قيوم برحمتك أستغيث' 50 مرة",   emoji: "💚", duration: "دقيقتين" },
+    { text: "اتحداك تتلو آخر آيات سورة التوبة بتدبر",              emoji: "🌈", duration: "دقيقتين" },
+    { text: "اتحداك تتبسم لله وتتذكر أن الابتسامة صدقة",           emoji: "😊", duration: "دقيقة واحدة" },
+    { text: "اتحداك تقرأ في سيرة النبي ﷺ لمدة 3 دقايق",           emoji: "🌹", duration: "3 دقايق" },
+    { text: "اتحداك تدعو الله أن ييسر لك حفظ القرآن",              emoji: "🧠", duration: "دقيقتين" },
+    { text: "اتحداك تقول دعاء الهم والحزن: 'اللهم إني عبدك'",      emoji: "🛡️", duration: "دقيقتين" },
+    { text: "اتحداك تتأمل في اسم الله 'اللطيف' وكيف يرعاك",       emoji: "✨", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ سورة الغاشية وتتخيل مشاهدها",             emoji: "🔥", duration: "3 دقايق" },
+    { text: "اتحداك تشكر الله على نعمة الوقت والعمر",              emoji: "⏰", duration: "دقيقتين" },
+    { text: "اتحداك تصلي على النبي ﷺ كل ما تفكر في حاجة بتريدها", emoji: "🌹", duration: "دقيقة واحدة" },
+    { text: "اتحداك تقول دعاء 'اللهم أصلح لي ديني الذي هو عصمة أمري'", emoji: "🤲", duration: "دقيقتين" },
+    { text: "اتحداك تتلو سورة الطارق وتتأمل في معانيها",           emoji: "🌌", duration: "دقيقتين" },
+    { text: "اتحداك تقرأ حديث نبوي وتطبقه في يومك",               emoji: "📚", duration: "3 دقايق" },
+    { text: "اتحداك تدعو الله أن يحفظك من الشيطان الرجيم",         emoji: "🛡️", duration: "دقيقة واحدة" },
+    { text: "اتحداك تتأمل في نعمة الإيمان وتشكر الله عليها",       emoji: "💙", duration: "دقيقتين" },
+    { text: "اتحداك تقول 'سبحانك اللهم وبحمدك أشهد أن لا إله إلا أنت' 10 مرات", emoji: "🌿", duration: "دقيقتين" },
+];
+
+// ─── State ───────────────────────────────────────────────────
+let _chShown = false;
+let _chIndex = 0;
+let _chIntervalId = null;
+const CH_INTERVAL_MS = 30 * 60 * 1000; // every 30 minutes
+
+// Persist index in localStorage
+function _loadIndex() {
+    try { _chIndex = parseInt(localStorage.getItem('_ch_idx') || '0', 10) || 0; } catch(e) {}
+}
+function _saveIndex() {
+    try { localStorage.setItem('_ch_idx', _chIndex); } catch(e) {}
+}
+
+function _getChallenge() {
+    _loadIndex();
+    const ch = CHALLENGES[_chIndex % CHALLENGES.length];
+    return { ...ch, num: (_chIndex % CHALLENGES.length) + 1 };
+}
+
+// ─── Show / Hide ─────────────────────────────────────────────
+function _showChallengeCard(reason) {
+    if (_chShown) return;
+    const ch = _getChallenge();
+    document.getElementById('ch-emoji').textContent    = ch.emoji;
+    document.getElementById('ch-text').textContent     = ch.text;
+    document.getElementById('ch-duration').textContent = ch.duration;
+    document.getElementById('ch-counter').textContent  = `تحدي #${ch.num} من ${CHALLENGES.length}`;
+    document.getElementById('challenge-overlay').style.display = 'flex';
+    _chShown = true;
+}
+
+function _hideChallengeCard() {
+    document.getElementById('challenge-overlay').style.display = 'none';
+    _chShown = false;
+}
+
+window.acceptChallenge = function() {
+    _chIndex++;
+    _saveIndex();
+    _hideChallengeCard();
+};
+
+window.skipChallenge = function() {
+    _hideChallengeCard();
+};
+
+// ─── Triggers ────────────────────────────────────────────────
+
+// 1) On app open (page load)
+window.addEventListener('load', function() {
+    setTimeout(function() { _showChallengeCard('open'); }, 1200);
+});
+
+// 2) Every 30 minutes
+_chIntervalId = setInterval(function() {
+    _showChallengeCard('timer');
+}, CH_INTERVAL_MS);
+
+// 3) Before page close (beforeunload)
+window.addEventListener('beforeunload', function() {
+    // Show on next open by bumping index logic; can't show UI on beforeunload easily.
+    // Instead, mark in storage that we want to show on next open.
+    try { localStorage.setItem('_ch_show_on_open', '1'); } catch(e) {}
+});
+
+// 4) Hook into app events — patch functions if they exist after DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    // After a short delay to let app JS run
+    setTimeout(function() {
+
+        // Helper: patch a global function to show challenge before calling it
+        function patchFn(name) {
+            const original = window[name];
+            if (typeof original === 'function') {
+                window[name] = function() {
+                    _showChallengeCard('patch:' + name);
+                    return original.apply(this, arguments);
+                };
+            }
+        }
+
+        // Patch start session / end session / open level
+        ['startSession', 'endSession', 'startBreaching', 'endBreaching',
+         'openLevelPage', 'openNewLevel', 'levelUp', 'onLevelUp',
+         'startMission', 'completeMission', 'finishMission']
+        .forEach(patchFn);
+
+    }, 2000);
+});
+
+// 5) Visibility change (coming back to tab/app)
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
+        const flag = localStorage.getItem('_ch_show_on_open');
+        if (flag === '1') {
+            try { localStorage.removeItem('_ch_show_on_open'); } catch(e) {}
+            setTimeout(function() { _showChallengeCard('visibility'); }, 800);
+        }
+    }
+});
+
+})();
+</script>
+
 </body>
 </html>
