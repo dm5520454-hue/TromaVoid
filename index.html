@@ -4488,7 +4488,7 @@
 
     function saveToStorage() {
         const data = {
-            nodes: nodes.map(n=>({status:n.status,label:n.label,edgeProgress:n.edgeProgress})),
+            nodes: nodes.map(n=>({status:n.status,label:n.label,edgeProgress:n.edgeProgress,_taskColor:n._taskColor||null})),
             timer: state.isBreaching?{activeIdx:state.activeIdx,startTime:state.startTime,duration:state.duration,taskName:state.taskName}:null,
             progression: { 
                 exp:state.exp, level:state.level, totalStudyMinutes:state.totalStudyMinutes, 
@@ -4597,7 +4597,7 @@
                 // Always load dailyLog from its dedicated key (merge)
                 loadDailyLog();
                 // Restore node statuses AND edgeProgress (so completed edges stay lit)
-                if(p.nodes) p.nodes.forEach((n,i)=>{ if(nodes[i]) { nodes[i].status=n.status; nodes[i].label=n.label; nodes[i].edgeProgress=n.edgeProgress||0; } });
+                if(p.nodes) p.nodes.forEach((n,i)=>{ if(nodes[i]) { nodes[i].status=n.status; nodes[i].label=n.label; nodes[i].edgeProgress=n.edgeProgress||0; nodes[i]._taskColor=n._taskColor||null; } });
                 if(p.timer) {
                     const elapsed = (Date.now() - p.timer.startTime)/1000;
                     if(elapsed >= p.timer.duration) {
@@ -5884,7 +5884,7 @@
     const _origSaveToStorage = saveToStorage;
     saveToStorage = function() {
         const data = {
-            nodes: nodes.map(n=>({status:n.status,label:n.label,edgeProgress:n.edgeProgress})),
+            nodes: nodes.map(n=>({status:n.status,label:n.label,edgeProgress:n.edgeProgress,_taskColor:n._taskColor||null})),
             timer: state.isBreaching?{activeIdx:state.activeIdx,startTime:state.startTime,duration:state.duration,taskName:state.taskName}:null,
             progression: {
                 exp:state.exp, level:state.level, totalStudyMinutes:state.totalStudyMinutes,
