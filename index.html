@@ -3020,10 +3020,54 @@
         </div>
     </div>
 
+    <div style="font-size:9px;color:var(--ice);letter-spacing:3px;opacity:0.6;margin-top:8px;">كيف حالك الآن؟ اختر مودك ♥️</div>
+    <div id="pre-mood-picker" style="display:flex;gap:10px;justify-content:center;margin:8px 0 4px;flex-wrap:wrap;">
+        <div class="mood-pre-btn active" data-mood="🔥" onclick="selectPreMood(this)" title="متحمس">🔥</div>
+        <div class="mood-pre-btn" data-mood="😊" onclick="selectPreMood(this)" title="كويس">😊</div>
+        <div class="mood-pre-btn" data-mood="😐" onclick="selectPreMood(this)" title="عادي">😐</div>
+        <div class="mood-pre-btn" data-mood="😴" onclick="selectPreMood(this)" title="تعبان">😴</div>
+        <div class="mood-pre-btn" data-mood="😤" onclick="selectPreMood(this)" title="ضايق">😤</div>
+        <div class="mood-pre-btn" data-mood="💪" onclick="selectPreMood(this)" title="مصمم">💪</div>
+        <div class="mood-pre-btn" data-mood="🤔" onclick="selectPreMood(this)" title="مفكر">🤔</div>
+        <div class="mood-pre-btn" data-mood="😰" onclick="selectPreMood(this)" title="قلقان">😰</div>
+    </div>
+
     <div style="display: flex; gap: 20px; margin-top:10px;">
         <div class="btn" onclick="engage()">INITIATE_BREACH</div>
         <div class="btn danger" onclick="closeOverlay()">CANCEL</div>
     </div>
+</div>
+
+<!-- ===== SELF-ASSESSMENT OVERLAY ===== -->
+<div id="self-assess-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.97);z-index:9000;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(20px);animation:overlayFadeIn 0.35s ease;">
+    <div id="sa-inner" style="max-width:420px;width:92vw;text-align:center;padding:10px;">
+        <div style="font-size:30px;margin-bottom:6px;">🌟</div>
+        <div id="sa-phase-title" style="font-size:17px;letter-spacing:5px;color:var(--ice);text-shadow:0 0 18px var(--ice);font-weight:900;margin-bottom:4px;">قيّم نفسك</div>
+        <div id="sa-task-label" style="font-size:10px;color:rgba(162,228,243,0.5);letter-spacing:3px;margin-bottom:20px;"></div>
+        <div id="sa-phase1">
+            <div style="font-size:11px;color:var(--ice);letter-spacing:3px;opacity:0.7;margin-bottom:10px;">تقييمك من 10</div>
+            <div id="sa-stars" style="display:flex;justify-content:center;gap:6px;margin-bottom:16px;flex-wrap:wrap;"></div>
+            <div style="font-size:11px;color:var(--ice);letter-spacing:3px;opacity:0.7;margin-bottom:10px;">مودك دلوقتي 🙂</div>
+            <div id="sa-mood-picker" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;"></div>
+            <div onclick="saGoPhase2()" style="padding:13px 40px;background:linear-gradient(135deg,var(--ice),#fff);color:#000;font-weight:900;font-size:13px;letter-spacing:4px;cursor:pointer;border-radius:7px;display:inline-block;box-shadow:0 0 30px var(--ice);">التالي ›</div>
+        </div>
+        <div id="sa-phase2" style="display:none;">
+            <div style="font-size:13px;color:var(--ice);letter-spacing:2px;margin-bottom:14px;">احكيلي عملت إيه في المهمة دي 🙂♥️</div>
+            <textarea id="sa-story" placeholder="اكتب هنا..." style="width:100%;min-height:120px;background:rgba(0,0,0,0.6);border:1.5px solid rgba(162,228,243,0.3);color:#fff;font-size:13px;padding:14px;border-radius:8px;resize:vertical;outline:none;font-family:var(--app-font);letter-spacing:1px;line-height:1.6;box-sizing:border-box;user-select:text;" onclick="this.focus()"></textarea>
+            <div style="display:flex;gap:14px;justify-content:center;margin-top:16px;">
+                <div onclick="saGoPhase1()" style="padding:11px 26px;border:1.5px solid rgba(162,228,243,0.4);color:var(--ice);font-weight:900;font-size:11px;letter-spacing:3px;cursor:pointer;border-radius:6px;background:rgba(0,0,0,0.5);">‹ رجوع</div>
+                <div onclick="saveSelfAssess()" style="padding:11px 30px;background:linear-gradient(135deg,var(--ice),#fff);color:#000;font-weight:900;font-size:12px;letter-spacing:3px;cursor:pointer;border-radius:6px;box-shadow:0 0 20px var(--ice);">💾 حفظ</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MY LIFE OVERLAY ===== -->
+<div id="mylife-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.98);z-index:300;flex-direction:column;align-items:center;backdrop-filter:blur(15px);animation:overlayFadeIn 0.3s ease;overflow-y:auto;padding:20px 16px 80px;">
+    <div style="font-size:20px;letter-spacing:6px;color:var(--ice);text-shadow:0 0 20px var(--ice);font-weight:900;margin:18px 0 4px;">♥️ MY LIFE</div>
+    <div style="font-size:9px;color:rgba(162,228,243,0.4);letter-spacing:3px;margin-bottom:20px;">يومياتك ومهامك المقيّمة</div>
+    <div id="mylife-list" style="width:100%;max-width:560px;"></div>
+    <div onclick="closeMyLife()" style="position:fixed;bottom:20px;padding:13px 40px;border:1.5px solid rgba(162,228,243,0.4);color:var(--ice);font-weight:900;font-size:11px;letter-spacing:3px;cursor:pointer;border-radius:6px;background:rgba(0,0,0,0.9);backdrop-filter:blur(10px);">✕ إغلاق</div>
 </div>
 
 <!-- ORIGINAL: Shop Overlay -->
@@ -3448,6 +3492,7 @@
 <!-- SCROLLABLE BOTTOM NAV BAR -->
 <nav id="bottom-nav">
     <div class="nav-btn highlight" onclick="openProgress()">▦ PROGRESS</div>
+    <div class="nav-btn" onclick="openMyLife()" style="color:#e88fa8;border-color:rgba(232,143,168,0.4);">🩷 MY LIFE</div>
     <div class="nav-separator"></div>
     <div class="nav-btn" onclick="openShop()">◈ MARKET</div>
     <div class="nav-btn" onclick="openSkills()">✦ SKILLS</div>
@@ -3457,6 +3502,7 @@
     <div class="nav-btn" id="bg-nav-btn" onclick="openBgThemes()">⬡ UNIVERSE</div>
     <div class="nav-separator"></div>
     <div class="nav-btn danger" onclick="confirmReset()">↺ REFRESH</div>
+    <div class="nav-btn" onclick="confirmRefreshSingle()" style="color:var(--warning);border-color:rgba(196,154,58,0.4);">↻ NODE</div>
     <div class="nav-separator"></div>
     <div class="nav-btn" onclick="openRooms()">⊛ ROOMS</div>
     <div class="nav-btn highlight" onclick="openProfile()">◎ PROFILE</div>
@@ -3638,6 +3684,7 @@
         </div>
         <div id="sdp-list">
             <div class="sdp-item hi"      onclick="openProgress();closeSideDrawer()"> <div class="sdp-icon">▦</div><div class="sdp-label">PROGRESS</div></div>
+            <div class="sdp-item hi"      onclick="openMyLife();closeSideDrawer()">   <div class="sdp-icon">♥️</div><div class="sdp-label">MY LIFE</div></div>
             <div class="sdp-sep"></div>
             <div class="sdp-item"         onclick="openShop();closeSideDrawer()">     <div class="sdp-icon">◈</div><div class="sdp-label">MARKET</div></div>
             <div class="sdp-item"         onclick="openSkills();closeSideDrawer()">   <div class="sdp-icon">✦</div><div class="sdp-label">SKILLS</div></div>
@@ -3651,6 +3698,7 @@
             <div class="sdp-item"         onclick="openWeekly();closeSideDrawer()">   <div class="sdp-icon">☰</div><div class="sdp-label">WEEKLY</div></div>
             <div class="sdp-sep"></div>
             <div class="sdp-item danger"  onclick="confirmReset();closeSideDrawer()"> <div class="sdp-icon">↺</div><div class="sdp-label">REFRESH</div></div>
+            <div class="sdp-item"         onclick="confirmRefreshSingle();closeSideDrawer()" style="color:var(--warning);"> <div class="sdp-icon">↻</div><div class="sdp-label">NODE</div></div>
             <div class="sdp-sep"></div>
             <div class="sdp-item"         onclick="openOurApps();closeSideDrawer()">  <div class="sdp-icon">📱</div><div class="sdp-label">OUR APPS</div></div>
             <div class="sdp-item"         onclick="shareApp();closeSideDrawer()">     <div class="sdp-icon">🔗</div><div class="sdp-label">SHARE APP</div></div>
@@ -3922,7 +3970,8 @@
 
     let _wLastTime = 0;
     function drawWeather(ts) {
-        if(ts - _wLastTime < 80) { requestAnimationFrame(drawWeather); return; } // ~12fps
+        if (document.hidden) { requestAnimationFrame(drawWeather); return; }
+        if(ts - _wLastTime < 100) { requestAnimationFrame(drawWeather); return; } // ~10fps
         _wLastTime = ts;
         weatherCtx.clearRect(0, 0, innerWidth, innerHeight);
         weatherParticles.forEach(p => {
@@ -3973,7 +4022,7 @@
         if(dashBest) dashBest.innerText = `x${state.comboBest || 0}`;
     }
 
-    setInterval(updateDashboard, 3000);
+    setInterval(() => { if (!document.hidden) updateDashboard(); }, 5000);
     function checkStreak() {
         const today = getAppDate();
         if(state.lastLoginDate !== today) {
@@ -4266,7 +4315,9 @@
         r.style.setProperty('--ice-g', theme.g || 200);
         r.style.setProperty('--ice-b', theme.b || 227);
         r.style.setProperty('--ice-glow', `rgba(${theme.r||126},${theme.g||200},${theme.b||227},0.4)`);
-        if (theme.font) {
+        // Only apply theme font if user hasn't manually selected a font
+        const userFont = state.customization?.selectedFont || localStorage.getItem('_troma_font');
+        if (!userFont && theme.font) {
             r.style.setProperty('--app-font', theme.font);
             document.body.style.fontFamily = theme.font;
         }
@@ -4274,8 +4325,6 @@
         const metaTheme = document.querySelector('meta[name="theme-color"]');
         if (metaTheme) metaTheme.content = theme.secondary || '#070A10';
         state.customization.theme = themeName;
-        // Persist font separately
-        if (theme.font) { try { localStorage.setItem('_troma_font', theme.font); } catch(e){} }
         saveToStorage();
     }
 
@@ -4464,6 +4513,8 @@
                     document.documentElement.style.setProperty('--app-font', f.val);
                     document.body.style.fontFamily = f.val;
                     try { localStorage.setItem('_troma_font', f.val); } catch(e) {}
+                    state.customization.selectedFont = f.val;
+                    saveToStorage();
                     renderCustomization();
                 };
                 fontRow.appendChild(chip);
@@ -4562,6 +4613,63 @@
         try { sfx.click(); } catch(e) {}
     }
 
+    // ── Single-node refresh ─────────────────────────────────────
+    const _defaultLabels = ['01','02','03','04','05','06','07','08','09','10','CORE'];
+
+    window.confirmRefreshSingle = function() {
+        const list = document.getElementById('refresh-node-list');
+        list.innerHTML = '';
+        nodes.forEach(function(n, i) {
+            const item = document.createElement('div');
+            const isLocked = n.status === 'locked';
+            item.className = 'rn-node-item' + (isLocked ? ' rn-locked' : '');
+            const icon  = n.status === 'completed' ? '✓' : n.status === 'available' ? '◎' : '🔒';
+            const color = n.status === 'completed' ? 'var(--ice)' : n.status === 'available' ? 'var(--gold)' : '#444';
+            item.innerHTML =
+                '<div class="rn-node-icon" style="color:' + color + '">' + icon + '</div>' +
+                '<div class="rn-node-label">NODE ' + (n.label || _defaultLabels[i]) + '</div>' +
+                '<div class="rn-node-status">' + n.status.toUpperCase() + '</div>';
+            if (!isLocked) {
+                item.onclick = function() { doRefreshSingle(i); };
+            }
+            list.appendChild(item);
+        });
+        document.getElementById('refresh-node-overlay').style.display = 'flex';
+    };
+
+    window.doRefreshSingle = function(idx) {
+        if (!nodes[idx]) return;
+        // If this node is currently active, save progress first
+        if (state.isBreaching && state.activeIdx === idx) {
+            const elapsedSecs = (Date.now() - state.startTime) / 1000;
+            const elapsedMins = Math.floor(elapsedSecs / 60);
+            if (elapsedMins > 0) {
+                addMinutesToDailyLog(elapsedMins);
+                state.totalStudyMinutes += elapsedMins;
+                showAchievement('PROGRESS_SAVED', 'Saved ' + elapsedMins + ' min before node reset');
+            }
+            state.isBreaching = false;
+            state.activeIdx = null;
+            state.taskName  = '';
+            state.startTime = null;
+        }
+        nodes[idx].status       = 'available';
+        nodes[idx].label        = _defaultLabels[idx] || nodes[idx].label;
+        nodes[idx].edgeProgress = 0;
+        saveToStorage();
+        saveDailyLog();
+        updateStatsUI();
+        document.getElementById('refresh-node-overlay').style.display = 'none';
+        showAchievement('NODE_RESET', 'Node ' + (_defaultLabels[idx] || (idx + 1)) + ' reset to available');
+        terminal.innerHTML = '> NODE_REFRESH: ' + (_defaultLabels[idx] || idx+1) + '<br>> STATUS: AVAILABLE<br>> READY_TO_BREACH';
+        try { sfx.click(); } catch(e) {}
+    };
+
+    window.closeRefreshNodeOverlay = function() {
+        document.getElementById('refresh-node-overlay').style.display = 'none';
+        try { sfx.click(); } catch(e) {}
+    };
+
     function init() {
         const dpr = devicePixelRatio||1;
         canvas.width = innerWidth*dpr; canvas.height = innerHeight*dpr; ctx.scale(dpr,dpr);
@@ -4585,9 +4693,9 @@
                         document.documentElement.style.setProperty('--ice-g', gg);
                         document.documentElement.style.setProperty('--ice-b', bb);
                     }
-                    // Restore saved font
+                    // Restore saved font — check state first, then fallback to localStorage
                     try {
-                        const savedFont = localStorage.getItem('_troma_font');
+                        const savedFont = state.customization?.selectedFont || localStorage.getItem('_troma_font');
                         if (savedFont) {
                             document.documentElement.style.setProperty('--app-font', savedFont);
                             document.body.style.fontFamily = savedFont;
@@ -4647,6 +4755,7 @@
     const _FRAME_MS = 1000 / _TARGET_FPS;
     function draw() {
         const now = performance.now();
+        if (document.hidden) { requestAnimationFrame(draw); return; } // pause when tab hidden
         if(now - _lastDrawTime < _FRAME_MS) { requestAnimationFrame(draw); return; }
         _lastDrawTime = now;
         // BG THEME: لو فيه ثيم غير nexus شغال، نمسح بدل ما نلوّن أسود
@@ -4823,6 +4932,12 @@
         updateStatsUI();
         renderDailyChallenges();
         saveToStorage();
+
+        // SELF-ASSESSMENT
+        var _taskNameForSA = state.taskName || 'TASK';
+        setTimeout(function() {
+            if(typeof showSelfAssessment === 'function') showSelfAssessment(_taskNameForSA);
+        }, 3000);
     }
 
     document.addEventListener('visibilitychange', ()=>{ if(document.hidden) { saveToStorage(); saveDailyLog(); try{ flushLostTimer(); }catch(e){} } });
@@ -5803,6 +5918,12 @@
 
         if(state.totalTasksCompleted%3===0) setTimeout(triggerBoss,2000);
         updateStatsUI(); renderDailyChallenges(); saveToStorage();
+
+        // SELF-ASSESSMENT — show after task complete
+        var _taskNameForSA2 = state.taskName || 'TASK';
+        setTimeout(function() {
+            if(typeof showSelfAssessment === 'function') showSelfAssessment(_taskNameForSA2);
+        }, 3000);
     };
 
     // ============================================================
@@ -6141,10 +6262,11 @@ const hexRings = Array.from({ length: HEX_COUNT }, () => ({
 // ── Main 3D render loop ─────────────────────────────────
 let p3Time = 0;
 let p3Last = 0;
-const P3_FPS = 18, P3_MS = 1000 / P3_FPS;
+const P3_FPS = 12, P3_MS = 1000 / P3_FPS;
 
 function renderP3(ts) {
     requestAnimationFrame(renderP3);
+    if (document.hidden) return; // pause when tab not visible
     if (ts - p3Last < P3_MS) return;
     const dt = ts - p3Last;
     p3Last = ts;
@@ -6334,6 +6456,107 @@ networkCanvas.style.boxShadow = `
             <div onclick="doReset()" style="padding:12px 28px;background:linear-gradient(135deg,var(--danger),#ff6b8a);color:#fff;font-weight:900;font-size:13px;letter-spacing:3px;cursor:pointer;border-radius:5px;border:none;font-family:Courier New,monospace;">✓ نعم، أعِد التعيين</div>
             <div onclick="cancelReset()" style="padding:12px 28px;border:1.5px solid rgba(162,228,243,0.5);color:var(--ice);font-weight:900;font-size:13px;letter-spacing:3px;cursor:pointer;border-radius:5px;background:rgba(0,0,0,0.7);font-family:Courier New,monospace;">✕ إلغاء</div>
         </div>
+    </div>
+</div>
+
+<!-- REFRESH SINGLE NODE OVERLAY -->
+<style>
+#refresh-node-overlay {
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.93);
+    z-index:500;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    backdrop-filter:blur(12px);
+    animation:overlayFadeIn 0.2s ease;
+}
+#refresh-node-box {
+    border:2px solid rgba(196,154,58,0.5);
+    border-radius:12px;
+    padding:32px 28px;
+    text-align:center;
+    background:rgba(5,5,0,0.97);
+    max-width:420px;
+    width:90vw;
+    max-height:85vh;
+    display:flex;
+    flex-direction:column;
+}
+#refresh-node-title {
+    font-size:15px;
+    letter-spacing:4px;
+    color:var(--warning);
+    font-weight:900;
+    margin-bottom:6px;
+}
+#refresh-node-sub {
+    font-size:9px;
+    letter-spacing:2px;
+    color:rgba(162,228,243,0.4);
+    margin-bottom:20px;
+}
+#refresh-node-list {
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    overflow-y:auto;
+    flex:1;
+    padding-right:4px;
+    margin-bottom:18px;
+}
+.rn-node-item {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:10px 14px;
+    border-radius:7px;
+    border:1.5px solid rgba(196,154,58,0.2);
+    background:rgba(10,8,0,0.6);
+    cursor:pointer;
+    transition:all 0.2s;
+}
+.rn-node-item:hover {
+    border-color:var(--warning);
+    background:rgba(196,154,58,0.1);
+    box-shadow:0 0 14px rgba(196,154,58,0.2);
+    transform:translateX(3px);
+}
+.rn-node-item.rn-locked {
+    opacity:0.35;
+    cursor:not-allowed;
+    pointer-events:none;
+}
+.rn-node-icon {
+    font-size:18px;
+    min-width:24px;
+    text-align:center;
+}
+.rn-node-label {
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:2px;
+    color:#fff;
+    flex:1;
+    text-align:left;
+}
+.rn-node-status {
+    font-size:8px;
+    letter-spacing:2px;
+    color:rgba(162,228,243,0.4);
+}
+.rn-node-item:not(.rn-locked) .rn-node-status {
+    color:var(--warning);
+}
+</style>
+<div id="refresh-node-overlay">
+    <div id="refresh-node-box">
+        <div id="refresh-node-title">↻ REFRESH NODE</div>
+        <div id="refresh-node-sub">اختر النود اللي عايز تعيد تشغيلها</div>
+        <div id="refresh-node-list"></div>
+        <div onclick="closeRefreshNodeOverlay()" style="padding:11px 32px;border:1.5px solid rgba(162,228,243,0.4);color:var(--ice);font-weight:900;font-size:11px;letter-spacing:3px;cursor:pointer;border-radius:6px;background:rgba(0,0,0,0.7);font-family:'Courier New',monospace;transition:all 0.2s;align-self:center;" onmouseover="this.style.background='var(--ice)';this.style.color='#000'" onmouseout="this.style.background='rgba(0,0,0,0.7)';this.style.color='var(--ice)'">✕ إلغاء</div>
     </div>
 </div>
 
@@ -7506,12 +7729,13 @@ networkCanvas.style.boxShadow = `
 
     // ── animation loop ──────────────────────────────────────
     let _bgLastFrame = 0;
-    const BG_FPS = 24, BG_MS = 1000/BG_FPS;
+    const BG_FPS = 16, BG_MS = 1000/BG_FPS;
     let activeTheme = THEMES[currentThemeId] || THEMES.nexus;
     if(activeTheme.init) activeTheme.init();
 
     function bgLoop(ts) {
         animId = requestAnimationFrame(bgLoop);
+        if (document.hidden) return; // pause when tab not visible
         if(ts - _bgLastFrame < BG_MS) return;
         _bgLastFrame = ts;
         bgCtx.clearRect(0,0,W,H);
@@ -7612,7 +7836,8 @@ networkCanvas.style.boxShadow = `
             let prevLast = 0;
             function prevLoop(ts2) {
                 previewAnims[id] = requestAnimationFrame(prevLoop);
-                if(ts2 - prevLast < 80) return; // ~12fps for previews
+                if (document.hidden) return;
+                if(ts2 - prevLast < 100) return; // ~10fps for previews
                 prevLast = ts2;
                 pCtx.clearRect(0,0,prev.width,prev.height);
                 if(prevTheme && prevTheme.draw) prevTheme.draw(ts2);
@@ -7809,7 +8034,8 @@ networkCanvas.style.boxShadow = `
             let prevLast2 = 0;
             function prevLoop2(ts2) {
                 previewAnims[id] = requestAnimationFrame(prevLoop2);
-                if(ts2 - prevLast2 < 80) return;
+                if (document.hidden) return;
+                if(ts2 - prevLast2 < 100) return;
                 prevLast2 = ts2;
                 pCtx.clearRect(0,0,prev.width,prev.height);
                 drawFn(ts2);
@@ -7922,14 +8148,15 @@ networkCanvas.style.boxShadow = `
         if(msgEl) msgEl.innerText = msg;
     }
 
-    // Ticker: كل ثانية
+    // Ticker: كل 2 ثانية — بس بيرسم الـ UI لما التاب شغال
+    // الحساب مش محتاج يشتغل هنا لأنه بيعتمد على Date.now() مش على count
     setInterval(() => {
         _checkLostRollover();
         if(!state.isBreaching) {
             if(state.lostTimeStart === null) state.lostTimeStart = Date.now();
-            updateLostWidget();
+            if (!document.hidden) updateLostWidget(); // رسم الـ UI بس لما التاب مفتوح
         }
-    }, 1000);
+    }, 2000);
 
     // حفظ كل 60 ثانية
     setInterval(() => { if(!state.isBreaching) flushLostTimer(); }, 60000);
@@ -9992,7 +10219,7 @@ window.addEventListener('load', function() {
             if (_colorStyle) _colorStyle.textContent = '';
         }
 
-        // Poll every 300ms: if breaching, apply node color to XP bar
+        // Poll every 2s: if breaching, apply node color to XP bar
         setInterval(function() {
             var st = window.state;
             if (!st) return;
@@ -10003,7 +10230,7 @@ window.addEventListener('load', function() {
             } else {
                 clearColorFromUI();
             }
-        }, 300);
+        }, 2000);
 
     }, 2000);
 });
@@ -10144,6 +10371,33 @@ window.addEventListener('load', function() {
     width: 14px;
     border-radius: 3px;
 }
+
+/* ========== MY LIFE + SELF-ASSESSMENT STYLES ========== */
+.mood-pre-btn { font-size:22px; cursor:pointer; padding:6px 8px; border-radius:10px; border:2px solid transparent; transition:all 0.2s; background:rgba(162,228,243,0.05); }
+.mood-pre-btn:hover { transform:scale(1.2); background:rgba(162,228,243,0.12); }
+.mood-pre-btn.active { border-color:var(--ice); background:rgba(162,228,243,0.18); box-shadow:0 0 14px rgba(162,228,243,0.3); transform:scale(1.15); }
+.sa-star { font-size:26px; cursor:pointer; transition:transform 0.15s; filter:grayscale(1); opacity:0.4; }
+.sa-star.on { filter:none; opacity:1; transform:scale(1.15); }
+.sa-star:hover { transform:scale(1.25); }
+.sa-mood-opt { font-size:24px; cursor:pointer; padding:6px 8px; border-radius:10px; border:2px solid transparent; background:rgba(162,228,243,0.05); transition:all 0.2s; }
+.sa-mood-opt:hover { transform:scale(1.2); background:rgba(162,228,243,0.12); }
+.sa-mood-opt.active { border-color:var(--ice); background:rgba(162,228,243,0.18); box-shadow:0 0 14px rgba(162,228,243,0.3); transform:scale(1.15); }
+.mylife-card { background:rgba(0,0,0,0.5); border:1.5px solid rgba(162,228,243,0.15); border-radius:12px; padding:16px 18px; margin-bottom:14px; transition:all 0.2s; }
+.mylife-card.pinned { border-color:rgba(255,215,0,0.45); background:rgba(10,8,0,0.7); box-shadow:0 0 18px rgba(255,215,0,0.12); }
+.mylife-card-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
+.mylife-card-task { font-size:13px; font-weight:900; color:#fff; letter-spacing:2px; flex:1; }
+.mylife-card-date { font-size:9px; color:rgba(162,228,243,0.4); letter-spacing:2px; }
+.mylife-card-meta { display:flex; gap:12px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+.mylife-rating-badge { background:rgba(162,228,243,0.1); border:1px solid rgba(162,228,243,0.25); border-radius:20px; padding:3px 10px; font-size:11px; font-weight:900; color:var(--ice); letter-spacing:1px; }
+.mylife-card-story { font-size:12px; color:rgba(255,255,255,0.65); line-height:1.7; border-left:2px solid rgba(162,228,243,0.2); padding-left:10px; margin-top:6px; white-space:pre-wrap; }
+.mylife-card-actions { display:flex; gap:8px; margin-top:10px; }
+.mylife-action-btn { font-size:10px; padding:5px 12px; border-radius:5px; cursor:pointer; letter-spacing:2px; font-weight:900; transition:all 0.2s; border:1px solid rgba(162,228,243,0.2); background:rgba(0,0,0,0.4); color:rgba(162,228,243,0.6); }
+.mylife-action-btn:hover { background:var(--ice); color:#000; border-color:var(--ice); }
+.mylife-action-btn.pin { color:rgba(255,215,0,0.7); border-color:rgba(255,215,0,0.25); }
+.mylife-action-btn.pin:hover { background:var(--gold); color:#000; }
+.mylife-action-btn.del:hover { background:var(--danger); color:#fff; border-color:var(--danger); }
+.mylife-empty { text-align:center; color:rgba(162,228,243,0.3); font-size:12px; letter-spacing:3px; padding:40px 0; }
+
 </style>
 
 <div id="tutorial-overlay">
@@ -10367,5 +10621,166 @@ window.addEventListener('load', function() {
 })();
 </script>
 
+
+<script>
+// ═══════════════════════════════════════════
+//  MY LIFE + SELF-ASSESSMENT SYSTEM
+// ═══════════════════════════════════════════
+(function() {
+    var ML_KEY = 'tromavoid_mylife_v1';
+    var _preMood = '🔥';
+    var _saRating = 0;
+    var _saMood = '😊';
+    var _saTaskName = '';
+
+    function loadEntries() {
+        try { var d = localStorage.getItem(ML_KEY); return d ? JSON.parse(d) : []; } catch(e) { return []; }
+    }
+    function saveEntries(arr) {
+        try { localStorage.setItem(ML_KEY, JSON.stringify(arr)); } catch(e) {}
+    }
+
+    window.selectPreMood = function(el) {
+        document.querySelectorAll('.mood-pre-btn').forEach(function(b){ b.classList.remove('active'); });
+        el.classList.add('active');
+        _preMood = el.dataset.mood;
+    };
+
+    window.showSelfAssessment = function(taskName) {
+        _saTaskName = taskName || 'TASK';
+        _saRating = 0;
+        _saMood = '😊';
+        document.getElementById('sa-task-label').innerText = taskName || '';
+        document.getElementById('sa-phase1').style.display = '';
+        document.getElementById('sa-phase2').style.display = 'none';
+        document.getElementById('sa-story').value = '';
+
+        var starsEl = document.getElementById('sa-stars');
+        starsEl.innerHTML = '';
+        for(var i = 1; i <= 10; i++) {
+            (function(n) {
+                var s = document.createElement('div');
+                s.className = 'sa-star';
+                s.innerText = '⭐';
+                s.title = n + '/10';
+                s.onclick = function() {
+                    _saRating = n;
+                    document.querySelectorAll('.sa-star').forEach(function(star, idx){
+                        star.classList.toggle('on', idx < n);
+                    });
+                };
+                starsEl.appendChild(s);
+            })(i);
+        }
+
+        var moodEl = document.getElementById('sa-mood-picker');
+        moodEl.innerHTML = '';
+        ['😄','😊','😐','😔','😤','🔥','💪','😴','🤩','😰'].forEach(function(em) {
+            var m = document.createElement('div');
+            m.className = 'sa-mood-opt' + (em === '😊' ? ' active' : '');
+            m.innerText = em;
+            m.onclick = function() {
+                _saMood = em;
+                document.querySelectorAll('.sa-mood-opt').forEach(function(x){ x.classList.remove('active'); });
+                m.classList.add('active');
+            };
+            moodEl.appendChild(m);
+        });
+
+        var ov = document.getElementById('self-assess-overlay');
+        ov.style.display = 'flex';
+    };
+
+    window.saGoPhase2 = function() {
+        if(_saRating === 0) _saRating = 5;
+        document.getElementById('sa-phase1').style.display = 'none';
+        document.getElementById('sa-phase2').style.display = '';
+        setTimeout(function(){ document.getElementById('sa-story').focus(); }, 100);
+    };
+
+    window.saGoPhase1 = function() {
+        document.getElementById('sa-phase2').style.display = 'none';
+        document.getElementById('sa-phase1').style.display = '';
+    };
+
+    window.saveSelfAssess = function() {
+        var story = document.getElementById('sa-story').value.trim();
+        var entries = loadEntries();
+        entries.unshift({
+            id: Date.now(),
+            task: _saTaskName,
+            preMood: _preMood,
+            rating: _saRating,
+            mood: _saMood,
+            story: story,
+            date: new Date().toLocaleString('ar-EG', {dateStyle:'medium', timeStyle:'short'}),
+            pinned: false
+        });
+        saveEntries(entries);
+        document.getElementById('self-assess-overlay').style.display = 'none';
+    };
+
+    window.openMyLife = function() {
+        renderMyLife();
+        document.getElementById('mylife-overlay').style.display = 'flex';
+    };
+    window.closeMyLife = function() {
+        document.getElementById('mylife-overlay').style.display = 'none';
+    };
+
+    function renderMyLife() {
+        var list = document.getElementById('mylife-list');
+        list.innerHTML = '';
+        var entries = loadEntries();
+        entries.sort(function(a,b){ return (b.pinned?1:0)-(a.pinned?1:0) || b.id-a.id; });
+        if(entries.length === 0) {
+            list.innerHTML = '<div class="mylife-empty">لسه مفيش تقييمات محفوظة<br><br>أكمل مهمة وقيّم نفسك 🙂</div>';
+            return;
+        }
+        entries.forEach(function(entry) {
+            var card = document.createElement('div');
+            card.className = 'mylife-card' + (entry.pinned ? ' pinned' : '');
+            var starsDisplay = '';
+            for(var i = 0; i < 10; i++) starsDisplay += (i < entry.rating ? '⭐' : '☆');
+            card.innerHTML =
+                '<div class="mylife-card-header">' +
+                    (entry.pinned ? '<span style="color:var(--gold);font-size:14px;">📌</span>' : '') +
+                    '<span class="mylife-card-task">' + (entry.preMood||'') + ' ' + (entry.task||'') + '</span>' +
+                    '<span class="mylife-card-date">' + (entry.date||'') + '</span>' +
+                '</div>' +
+                '<div class="mylife-card-meta">' +
+                    '<span class="mylife-rating-badge">' + (entry.rating||0) + '/10</span>' +
+                    '<span style="font-size:20px;">' + (entry.mood||'') + '</span>' +
+                    '<span style="font-size:10px;color:rgba(162,228,243,0.5);">' + starsDisplay + '</span>' +
+                '</div>' +
+                (entry.story ? '<div class="mylife-card-story">' + entry.story + '</div>' : '') +
+                '<div class="mylife-card-actions">' +
+                    '<div class="mylife-action-btn pin" onclick="togglePinEntry(' + entry.id + ')">' + (entry.pinned ? '📌 ثابت' : '📌 تثبيت') + '</div>' +
+                    '<div class="mylife-action-btn del" onclick="deleteEntry(' + entry.id + ')">🗑 حذف</div>' +
+                '</div>';
+            list.appendChild(card);
+        });
+    }
+
+    window.togglePinEntry = function(id) {
+        var entries = loadEntries();
+        entries = entries.map(function(e){ if(e.id===id) e.pinned=!e.pinned; return e; });
+        saveEntries(entries);
+        renderMyLife();
+    };
+    window.deleteEntry = function(id) {
+        var entries = loadEntries();
+        entries = entries.filter(function(e){ return e.id !== id; });
+        saveEntries(entries);
+        renderMyLife();
+    };
+
+    // Allow typing in textarea
+    window.addEventListener('load', function() {
+        var ta = document.getElementById('sa-story');
+        if(ta) { ta.style.userSelect = 'text'; ta.style.webkitUserSelect = 'text'; }
+    });
+})();
+</script>
 </body>
 </html>
